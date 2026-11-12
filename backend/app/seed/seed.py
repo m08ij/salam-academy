@@ -96,9 +96,9 @@ def bodies(D: dict, lesson: dict) -> tuple[str, str]:
     cs = fw["concepts"]
     if k == "intro":
         ar = "«سلام» برنامج صحة نفسية وتنمية ذات مبني على القيم؛ يعتمد على الإيمان بالله ﷻ وبأسمائه الحسنى، وعلى أحدث الأبحاث في علم النفس الإيجابي والذكاء العاطفي.\n\n" + \
-             f"تتكون المنظومة من ٣ علاقات، و١٢ مجموعة للأسماء الحسنى، و{_ar(D['stats']['names'])} اسمًا، و{_ar(D['stats']['values'])} قيمة بموازينها، و{_ar(D['stats']['beh'])} سلوكًا.\n\n" + "\n\n".join(f"{c[0]}: {c[2]}" for c in cs)
+             f"تتكون المنظومة من ٣ علاقات، و١٢ مجموعة للأسماء الحسنى، و{_ar(D['stats']['names'])} معنى من الأسماء الحسنى، و{_ar(D['stats']['values'])} قيمة بموازينها، و{_ar(D['stats']['beh'])} سلوكًا.\n\n" + "\n\n".join(f"{c[0]}: {c[2]}" for c in cs)
         en = "Salam is a values-based mental-health and self-development program built on faith in Allah and His Beautiful Names and on research in positive psychology and emotional intelligence.\n\n" + \
-             f"The system has 3 relationships, 12 groups of the Names, {D['stats']['names']} Names, {D['stats']['values']} values with scales and {D['stats']['beh']} behaviors.\n\n" + "\n\n".join(f"{c[1]}: {c[3]}" for c in cs)
+             f"The system has 3 relationships, 12 groups of the Names, {D['stats']['names']} meanings of the Names, {D['stats']['values']} values with scales and {D['stats']['beh']} behaviors.\n\n" + "\n\n".join(f"{c[1]}: {c[3]}" for c in cs)
         return ar, en
     if k == "emotions":
         ar = ["المشاعر حاجات إنسانية تؤثر في قراراتنا وعلاقاتنا. لكل شعور ميزان: اتزان، وطغيان، وخسران."]

@@ -34,6 +34,9 @@ const CRIT: { icon: IconName; t: Pair; d: Pair }[] = [
   { icon: "enroll", t: ["مشروع المستوى", "Level project"], d: ["مشروع تطبيقي يعتمده المدرب.", "An applied project approved by the trainer."] },
   { icon: "medal", t: ["العلامة النهائية", "Final grade"], d: ["علامة مرجّحة واعتماد المدرب للانتقال.", "A weighted grade and the trainer’s sign-off."] },
 ];
+/** Arabic counted noun for "meaning": ٣–١٠ take the plural, everything else the singular. */
+const meaningsAr = (n: number) => (n >= 3 && n <= 10 ? "معانٍ" : "معنى");
+
 const COVERS = ["#0A5C66", "#7A4E8F", "#A8800C", "#23774A", "#2A5E8C", "#B4473B", "#0B7F7A", "#5B4B8A", "#8A6B1D", "#1F6F8B", "#9C3D5B", "#3E7C59", "#6A5ACD"];
 
 export default function Home() {
@@ -100,7 +103,7 @@ export default function Home() {
         {/* ---------------- stats ---------------- */}
         <div style={{ maxWidth: 1200, marginInline: "auto", padding: "0 20px", marginTop: -36, position: "relative" }}>
           <div className="stats-strip" data-reveal="zoom">
-            {([[s?.relations ?? 3, ["علاقات", "relationships"]], [s?.groups ?? 12, ["مجموعة للأسماء الحسنى", "groups of the Names"]], [s?.names ?? 106, ["اسمًا من الأسماء الحسنى", "Beautiful Names"]],
+            {([[s?.relations ?? 3, ["علاقات", "relationships"]], [s?.groups ?? 12, ["مجموعة للأسماء الحسنى", "groups of the Names"]], [s?.names ?? 106, ["معنى من الأسماء الحسنى", "meanings of the Beautiful Names"]],
               [s?.values ?? 209, ["قيمة بموازينها", "values with scales"]], [s?.behaviors ?? 3177, ["سلوكًا عمليًا", "practical behaviors"]]] as [number, Pair][]).map(([v, l]) => (
               <div key={l[1]}><CountUp value={v} lang={lang} /><span>{L(l)}</span></div>
             ))}
@@ -153,7 +156,7 @@ export default function Home() {
           <div className="groups">
             {(d?.groups ?? Array.from({ length: 12 }, () => null)).map((g, i) => g ? (
               <div key={g.id} className="grpc" data-reveal style={{ ["--c" as any]: g.color, ["--i" as any]: i % 4 }}>
-                <div className="row between"><span className="sw">{n(g.position)}</span><span className="pill">{n(g.names.length)} {L(["اسمًا", "Names"])}</span></div>
+                <div className="row between"><span className="sw">{n(g.position)}</span><span className="pill">{n(g.names.length)} {L([meaningsAr(g.names.length), g.names.length === 1 ? "meaning" : "meanings"])}</span></div>
                 <h3>{L(g.t)}</h3>
                 <span className="names">{g.names.map((x) => L(x)).join(lang === "ar" ? "، " : ", ")}</span>
               </div>
