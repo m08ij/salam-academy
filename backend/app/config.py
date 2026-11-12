@@ -22,6 +22,8 @@ class Settings(BaseSettings):
 
     require_staff_mfa: bool = True
     allow_signup: bool = False
+    # Trial period: comma-separated e-mails that may sign in, accept invites or be invited. Empty = everyone.
+    trial_emails: str = ""
 
     login_max_failures: int = 5
     lockout_minutes: int = 15
@@ -38,6 +40,10 @@ class Settings(BaseSettings):
     smtp_password: str = ""
     smtp_from: str = "Salam Academy <no-reply@example.org>"
     smtp_starttls: bool = True
+
+    def trial_allowed(self, email: str | None) -> bool:
+        allowed = {e.strip().lower() for e in self.trial_emails.split(",") if e.strip()}
+        return not allowed or (email or "").strip().lower() in allowed
 
     @field_validator("app_url")
     @classmethod

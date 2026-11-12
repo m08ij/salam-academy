@@ -10,6 +10,7 @@ from fastapi import APIRouter, Depends, Response
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session as DB
 
+from ..config import get_settings
 from ..db import get_db
 from ..models import CatBehavior, CatGroup, CatName, CatValue, Program
 from ..seed.seed import load
@@ -46,3 +47,9 @@ def overview(response: Response, db: DB = Depends(get_db)):
              "values": db.scalar(select(func.count()).select_from(CatValue)) or 0, "behaviors": db.scalar(select(func.count()).select_from(CatBehavior)) or 0}
     response.headers["Cache-Control"] = "public, max-age=300"
     return {"stats": stats, "relations": {str(k): v for k, v in rel_counts.items()}, "groups": groups, "academy": academy, **_payload_public()}
+
+
+@router.get("/config")
+def config():
+    """What the sign-in page needs to know. The allow-list itself is never published."""
+    return {"trial": bool(get_settings().trial_emails.strip())}

@@ -60,6 +60,8 @@ def invite(body: InviteIn, request: Request, ctx: Ctx = Depends(require("users")
     if body.role not in ASSIGNABLE.get(ctx.user.role, ()):
         raise HTTPException(status_code=403, detail={"code": "role_not_assignable"})
     email = body.email.lower().strip()
+    if not s.trial_allowed(email):
+        raise HTTPException(status_code=403, detail={"code": "trial_only"})
     if ctx.db.scalar(select(User).where(User.email == email)):
         raise HTTPException(status_code=409, detail={"code": "email_exists"})
     u = User(email=email, name=body.name.strip(), role=body.role, locale=body.locale, status="invited")

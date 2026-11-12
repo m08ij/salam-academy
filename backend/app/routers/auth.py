@@ -18,6 +18,7 @@ from ..security.tokens import digest, new_token
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 GENERIC_FAIL = {"code": "invalid_credentials"}
+TRIAL_ONLY = {"code": "trial_only"}
 
 
 class LoginIn(BaseModel):
@@ -83,6 +84,10 @@ def login(body: LoginIn, request: Request, response: Response, db: DB = Depends(
     ip = sessions.client_ip(request)
     ratelimit.hit(db, f"login:ip:{ip}", 30, 600)
     ratelimit.hit(db, f"login:email:{email}", 10, 600)
+    if not s.trial_allowed(email):
+        audit.log(db, "login_trial_blocked", None, request, "user", None, email_hash=digest(email)[:16])
+        db.commit()
+        raise HTTPException(status_code=403, detail=TRIAL_ONLY)
     user = db.scalar(select(User).where(User.email == email))
     now = utcnow()
     locked = bool(user and user.locked_until and user.locked_until > now)
@@ -156,7 +161,7 @@ def forgot(body: EmailIn, request: Request, db: DB = Depends(get_db)):
     except HTTPException:
         return {"ok": True}
     user = db.scalar(select(User).where(User.email == email))
-    if user and user.status == "active":
+    if user and user.status == "active" and s.trial_allowed(email):
         raw = issue_token(db, user, "reset", timedelta(minutes=s.reset_token_minutes))
         audit.log(db, "password_reset_requested", user, request, "user", user.id)
         db.commit()
@@ -181,6 +186,8 @@ def reset(body: TokenPasswordIn, request: Request, db: DB = Depends(get_db)):
     user = db.get(User, tok.user_id)
     if not user or user.status != "active":
         raise HTTPException(status_code=400, detail={"code": "invalid_token"})
+    if not get_settings().trial_allowed(user.email):
+        raise HTTPException(status_code=403, detail=TRIAL_ONLY)
     _set_password(db, user, body.password)  # a rejected password does not burn the link
     tok.used_at = utcnow()
     sessions.revoke_all(db, user.id)
@@ -197,6 +204,8 @@ def accept_invite(body: TokenPasswordIn, request: Request, db: DB = Depends(get_
     user = db.get(User, tok.user_id)
     if not user or user.status != "invited":
         raise HTTPException(status_code=400, detail={"code": "invalid_token"})
+    if not get_settings().trial_allowed(user.email):
+        raise HTTPException(status_code=403, detail=TRIAL_ONLY)
     _set_password(db, user, body.password)
     tok.used_at = utcnow()
     user.status, user.email_verified_at = "active", utcnow()
@@ -212,6 +221,8 @@ def signup(body: SignupIn, request: Request, db: DB = Depends(get_db)):
         raise HTTPException(status_code=404, detail={"code": "not_found"})
     ratelimit.hit(db, f"signup:ip:{sessions.client_ip(request)}", 5, 3600)
     email = body.email.lower().strip()
+    if not s.trial_allowed(email):
+        raise HTTPException(status_code=403, detail=TRIAL_ONLY)
     errs = policy_errors(body.password, email, body.name)
     if errs:
         raise HTTPException(status_code=422, detail={"code": "weak_password", "errors": errs})

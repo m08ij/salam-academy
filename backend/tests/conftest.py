@@ -9,7 +9,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 os.environ.update({
     "SALAM_ENVIRONMENT": "test", "SALAM_DATABASE_URL": os.environ.get("SALAM_TEST_DATABASE_URL", f"sqlite:///{ROOT / 'test.db'}"), "SALAM_MFA_ENCRYPTION_KEY": Fernet.generate_key().decode(),
-    "SALAM_APP_URL": "http://web.test", "SALAM_COOKIE_SECURE": "false", "SALAM_SMTP_HOST": "", "SALAM_REQUIRE_STAFF_MFA": "true", "SALAM_ALLOW_SIGNUP": "false", "SALAM_HIBP_CHECK": "false",
+    "SALAM_APP_URL": "http://web.test", "SALAM_COOKIE_SECURE": "false", "SALAM_SMTP_HOST": "", "SALAM_REQUIRE_STAFF_MFA": "true", "SALAM_TRIAL_EMAILS": "", "SALAM_ALLOW_SIGNUP": "false", "SALAM_HIBP_CHECK": "false",
 })
 
 from fastapi.testclient import TestClient  # noqa: E402

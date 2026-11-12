@@ -63,6 +63,7 @@ async function demoApi<T>(path: string): Promise<T> {
     const r = await fetch(asset("/demo/overview.json"));
     if (r.ok) return (await r.json()) as T;
   }
+  if (p === "/public/config") return { trial: true } as T;
   if (p === "/auth/me") throw new ApiError(401, { code: "unauthenticated" });
   throw new ApiError(503, { code: "demo_mode" });
 }

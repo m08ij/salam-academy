@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from fastapi import Depends, HTTPException, Request
 from sqlalchemy.orm import Session as DB
 
+from .config import get_settings
 from .db import get_db
 from .models import Session, User
 from .permissions import has
@@ -34,6 +35,8 @@ def _ctx(request: Request, db: DB, allow_pending: bool) -> Ctx:
     if not sess:
         raise HTTPException(status_code=401, detail={"code": "unauthenticated"})
     _check_csrf(request, sess)
+    if not get_settings().trial_allowed(sess.user.email):
+        raise HTTPException(status_code=401, detail={"code": "trial_only"})
     if not sess.mfa_passed and not allow_pending:
         raise HTTPException(status_code=401, detail={"code": "mfa_required"})
     if sess.user.must_change_password and not allow_pending and request.url.path not in ("/api/me/password",):

@@ -251,6 +251,9 @@ th { background: var(--surface-2); font-weight: 700; color: var(--ink-2); font-s
 .update-t .small { color: var(--ink-2); }
 .update .bar { margin-top: 4px; }
 
+.trial-note { display: flex; flex-direction: column; gap: 2px; padding: 11px 14px; border-radius: 12px; background: var(--info-soft); border: 1px solid color-mix(in srgb, var(--info) 35%, transparent); border-inline-start: 4px solid var(--info); font-size: .86rem; color: var(--ink-2); }
+.trial-note b { color: var(--info); font-size: .9rem; }
+
 /* ---------- auth ---------- */
 .auth { min-height: 100vh; min-height: 100dvh; display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); }
 .auth-side { position: relative; overflow: hidden; color: #fff; padding: 44px; display: flex; flex-direction: column; justify-content: space-between; gap: 32px;
