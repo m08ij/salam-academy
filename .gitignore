@@ -1,0 +1,11 @@
+.env
+**/node_modules/
+**/.next/
+**/__pycache__/
+*.db
+**/.venv/
+**/.pytest_cache/
+**/.ruff_cache/
+**/test.db
+**/*.db-journal
+**/.claude/

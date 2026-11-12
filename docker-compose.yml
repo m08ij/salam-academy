@@ -1,0 +1,55 @@
+# Salam Academy — production-style stack: PostgreSQL + API + web, behind your TLS reverse proxy.
+# Start:  cp .env.example .env  →  fill the secrets  →  docker compose up -d --build
+# Then:   docker compose exec api python -m app.cli seed
+#         docker compose exec -it api python -m app.cli create-owner --email you@example.org --name "Your name"
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: salam
+      POSTGRES_USER: salam
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+    volumes: [dbdata:/var/lib/postgresql/data]
+    healthcheck: { test: ["CMD-SHELL", "pg_isready -U salam -d salam"], interval: 10s, timeout: 5s, retries: 10 }
+    networks: [internal]
+
+  api:
+    build: ./backend
+    restart: unless-stopped
+    depends_on: { db: { condition: service_healthy } }
+    environment:
+      SALAM_ENVIRONMENT: ${SALAM_ENVIRONMENT:-production}
+      SALAM_DATABASE_URL: postgresql+psycopg://salam:${POSTGRES_PASSWORD}@db:5432/salam
+      SALAM_APP_URL: ${SALAM_APP_URL:?set SALAM_APP_URL}
+      SALAM_MFA_ENCRYPTION_KEY: ${SALAM_MFA_ENCRYPTION_KEY:?set SALAM_MFA_ENCRYPTION_KEY}
+      SALAM_COOKIE_SECURE: ${SALAM_COOKIE_SECURE:-true}
+      SALAM_REQUIRE_STAFF_MFA: ${SALAM_REQUIRE_STAFF_MFA:-true}
+      SALAM_ALLOW_SIGNUP: ${SALAM_ALLOW_SIGNUP:-false}
+      SALAM_HIBP_CHECK: ${SALAM_HIBP_CHECK:-false}
+      SALAM_SMTP_HOST: ${SALAM_SMTP_HOST:-}
+      SALAM_SMTP_PORT: ${SALAM_SMTP_PORT:-587}
+      SALAM_SMTP_USER: ${SALAM_SMTP_USER:-}
+      SALAM_SMTP_PASSWORD: ${SALAM_SMTP_PASSWORD:-}
+      SALAM_SMTP_FROM: ${SALAM_SMTP_FROM:-Salam Academy <no-reply@example.org>}
+    networks: [internal]
+
+  web:
+    build: ./frontend
+    restart: unless-stopped
+    depends_on: [api]
+    environment:
+      API_ORIGIN: http://api:8000
+    ports: ["127.0.0.1:3000:3000"]   # publish through your TLS reverse proxy (nginx, Caddy, Traefik…)
+    networks: [internal]
+
+  # Development mail catcher: uncomment, set SALAM_SMTP_HOST=mail, SALAM_SMTP_PORT=1025, SALAM_SMTP_STARTTLS=false, open http://localhost:8025
+  # mail:
+  #   image: axllent/mailpit:v1.21
+  #   ports: ["127.0.0.1:8025:8025"]
+  #   networks: [internal]
+
+volumes:
+  dbdata:
+networks:
+  internal:
