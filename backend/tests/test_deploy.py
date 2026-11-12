@@ -100,3 +100,19 @@ def test_bootstrap_without_password_prints_owner_invite_that_survives_restarts(s
         assert "Owner exists" in capsys.readouterr().out
     finally:
         _restore(ids)
+
+
+def test_trial_users_created_once_and_can_sign_in(settings):
+    from app.cli import trial_users
+    s = get_settings()
+    old, old_min = s.trial_users, s.password_min_length
+    try:
+        s.password_min_length = 8  # as on the trial host
+        s.trial_users = "Trial.A@example.org|Trial A|admin|Salam@2026b; bad-entry; trial.b@example.org|Trial B|developer|Salam@2026c"
+        trial_users()
+        trial_users()  # second start: nothing changes
+        r = Api().login("trial.a@example.org", "Salam@2026b")
+        assert r.status_code == 200 and r.json()["me"]["role"] == "admin"
+        assert Api().login("trial.b@example.org", "Salam@2026c").status_code == 200
+    finally:
+        s.trial_users, s.password_min_length = old, old_min

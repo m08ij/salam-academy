@@ -31,6 +31,8 @@ class Settings(BaseSettings):
     owner_email: str = ""
     owner_name: str = ""
     owner_password: str = ""
+    # Trial only: "email|name|role|password;..." accounts created at start-up if missing (ready to sign in).
+    trial_users: str = ""
 
     login_max_failures: int = 5
     lockout_minutes: int = 15

@@ -48,6 +48,39 @@ def create_owner(email: str, name: str, password: str | None = None, from_stdin:
         db.close()
 
 
+def trial_users() -> None:
+    """Creates SALAM_TRIAL_USERS accounts that do not exist yet. Existing accounts are never changed."""
+    from .config import get_settings
+    spec = get_settings().trial_users.strip()
+    if not spec:
+        return
+    db = session_scope()
+    try:
+        for item in filter(None, (x.strip() for x in spec.split(";"))):
+            parts = [p.strip() for p in item.split("|")]
+            if len(parts) != 4 or parts[2] not in ("owner", "admin", "developer", "trainer", "trainee"):
+                print(f"SALAM_TRIAL_USERS entry ignored (expected email|name|role|password): {parts[0] if parts else ''}")
+                continue
+            email, name, role, pw = parts[0].lower(), parts[1], parts[2], parts[3]
+            if db.scalar(select(User).where(User.email == email)):
+                continue
+            if role == "owner" and db.scalar(select(User).where(User.role == "owner", User.status != "deleted")):
+                print(f"{email}: an owner already exists; skipped.")
+                continue
+            errs = policy_errors(pw, email, name)
+            if errs:
+                print(f"{email}: password rejected ({', '.join(errs)}); skipped.")
+                continue
+            u = User(email=email, name=name, role=role, status="active", password_hash=hash_password(pw), password_changed_at=utcnow(), email_verified_at=utcnow())
+            db.add(u)
+            db.flush()
+            audit.log(db, "trial_user_created", u, None, "user", u.id, role=role)
+            print(f"Trial account ready: {email} ({role})")
+        db.commit()
+    finally:
+        db.close()
+
+
 def bootstrap() -> None:
     """Creates the first owner from the environment, once; does nothing when an owner already exists.
 
@@ -138,6 +171,7 @@ def main(argv=None) -> None:
         finally:
             db.close()
     elif a.cmd == "bootstrap":
+        trial_users()
         bootstrap()
     elif a.cmd == "dump-public":
         import json
