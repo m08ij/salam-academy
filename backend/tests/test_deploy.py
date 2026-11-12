@@ -81,3 +81,22 @@ def test_invite_link_shared_only_without_smtp(settings):
     settings.smtp_host, settings.show_invite_links = "", False
     r = a.post("/api/admin/users/invite", {"email": "no.share@example.org", "name": "No Share", "role": "trainee"}).json()
     assert "invite_link" not in r
+
+
+def test_bootstrap_without_password_prints_owner_invite_that_survives_restarts(settings, capsys):
+    ids = _hide_owners()
+    try:
+        settings.owner_email, settings.owner_name, settings.owner_password = "invited.owner@example.org", "Invited Owner", ""
+        bootstrap()
+        out = capsys.readouterr().out
+        assert "OWNER INVITE" in out
+        token = out.split("token=")[1].split()[0]
+        bootstrap()  # container restart: the link already handed out must stay valid
+        assert "still pending" in capsys.readouterr().out
+        assert Api().post("/api/auth/accept-invite", {"token": token, "password": PW}).status_code == 200
+        r = Api().login("invited.owner@example.org")
+        assert r.status_code == 200 and r.json()["me"]["role"] == "owner"
+        bootstrap()
+        assert "Owner exists" in capsys.readouterr().out
+    finally:
+        _restore(ids)

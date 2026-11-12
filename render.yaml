@@ -32,8 +32,8 @@ services:
         sync: false
       - key: SALAM_OWNER_NAME
         sync: false
-      - key: SALAM_OWNER_PASSWORD       # 12+ characters; you will be asked to change it on first sign-in
-        sync: false
+      # No owner password here: on first start the log prints a single-use "OWNER INVITE" link
+      # (Render → service → Logs) and the owner sets their own password from it.
 
 databases:
   - name: salam-db

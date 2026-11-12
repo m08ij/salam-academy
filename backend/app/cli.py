@@ -49,33 +49,58 @@ def create_owner(email: str, name: str, password: str | None = None, from_stdin:
 
 
 def bootstrap() -> None:
-    """Creates the first owner from the environment, once. Idempotent: does nothing when an owner already exists."""
+    """Creates the first owner from the environment, once; does nothing when an owner already exists.
+
+    With SALAM_OWNER_PASSWORD: an active owner who must change that password on first sign-in.
+    Without it: an invited owner, and a single-use invite link is printed to the log so the owner sets
+    their own password (no secret ever has to be typed into the host's settings).
+    """
+    from datetime import timedelta
+
     from .config import get_settings
+    from .routers.auth import issue_token
     s = get_settings()
     db = session_scope()
     try:
-        if db.scalar(select(User).where(User.role == "owner", User.status != "deleted")):
+        if db.scalar(select(User).where(User.role == "owner", User.status.in_(("active", "suspended")))):
             print("Owner exists; bootstrap skipped.")
             return
         email, name, pw = s.owner_email.lower().strip(), s.owner_name.strip() or "Owner", s.owner_password
-        if not email or not pw:
-            print("No owner yet. Set SALAM_OWNER_EMAIL and SALAM_OWNER_PASSWORD to create one.")
+        if not email:
+            print("No owner yet. Set SALAM_OWNER_EMAIL (and optionally SALAM_OWNER_PASSWORD) to create one.")
             return
-        errs = policy_errors(pw, email, name)
-        if errs:
-            print("SALAM_OWNER_PASSWORD rejected by the password policy: " + ", ".join(errs))
-            return
+        if pw:
+            errs = policy_errors(pw, email, name)
+            if errs:
+                print("SALAM_OWNER_PASSWORD rejected by the password policy: " + ", ".join(errs))
+                return
         u = db.scalar(select(User).where(User.email == email))
         if u is None:
             u = User(email=email, name=name)
             db.add(u)
-        u.role, u.status, u.password_hash = "owner", "active", hash_password(pw)
-        u.password_changed_at = u.email_verified_at = utcnow()
-        u.must_change_password = True  # the bootstrap password lives in the host's settings; replace it on first sign-in
+        u.role, u.name = "owner", name
+        if pw:
+            u.status, u.password_hash = "active", hash_password(pw)
+            u.password_changed_at = u.email_verified_at = utcnow()
+            u.must_change_password = True  # the bootstrap password lives in the host's settings; replace it on first sign-in
+            db.flush()
+            audit.log(db, "owner_bootstrapped", u, None, "user", u.id)
+            db.commit()
+            print(f"Owner {email} created.")
+            return
+        u.status = "invited"
         db.flush()
-        audit.log(db, "owner_bootstrapped", u, None, "user", u.id)
+        from .models import Token
+        pending = db.scalar(select(Token).where(Token.user_id == u.id, Token.kind == "invite", Token.used_at.is_(None), Token.expires_at > utcnow()))
+        if pending:
+            # Restarts (e.g. a free host waking up) must not invalidate a link that was already handed out.
+            db.commit()
+            print(f"Owner invite for {email} is still pending (expires {pending.expires_at:%Y-%m-%d %H:%M} UTC); the earlier link stays valid.")
+            return
+        raw = issue_token(db, u, "invite", timedelta(hours=s.invite_token_hours))  # replaces any earlier link
+        audit.log(db, "owner_invited_by_bootstrap", u, None, "user", u.id)
         db.commit()
-        print(f"Owner {email} created.")
+        print(f"OWNER INVITE ({email}, valid {s.invite_token_hours} h, single use): {s.app_url}/accept-invite?token={raw}")
     finally:
         db.close()
 
