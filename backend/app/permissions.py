@@ -5,7 +5,7 @@ PERMS: dict[str, frozenset[str]] = {
     # Developer: builds and maintains the platform and solves technical problems — content, settings, audit,
     # account support (unlock, resend invites, password resets), read access to every learner's progress, announcements.
     # Cannot change roles, grant admin, override promotions, or touch admin/owner accounts.
-    "developer": frozenset({"learn", "programs", "settings", "audit", "export", "preview", "users", "train", "train_all", "cohorts", "announce"}),
+    "developer": frozenset({"learn", "programs", "settings", "audit", "export", "preview", "users", "train", "train_all", "cohorts", "announce", "roles", "override"}),
     "trainer": frozenset({"learn", "train", "cohorts_read", "announce", "preview"}),
     "trainee": frozenset({"learn"}),
 }
@@ -13,7 +13,7 @@ PERMS: dict[str, frozenset[str]] = {
 ASSIGNABLE: dict[str, tuple[str, ...]] = {
     "owner": ("admin", "developer", "trainer", "trainee"),
     "admin": ("developer", "trainer", "trainee"),
-    "developer": ("trainer", "trainee"),
+    "developer": ("developer", "trainer", "trainee"),
 }
 
 

@@ -51,9 +51,10 @@ def test_role_rules(db):
     d = Api()
     staff_login(d, dev)
     assert d.get("/api/admin/users").status_code == 200  # account support
-    assert d.patch(f"/api/admin/users/{target.id}", {"role": "trainer"}).status_code == 403  # but no role changes
+    assert d.patch(f"/api/admin/users/{make_user().id}", {"role": "trainer"}).status_code == 200  # role changes below admin
+    assert d.patch(f"/api/admin/users/{target.id}", {"role": "trainee"}).status_code == 403  # target is an admin now
     assert d.patch(f"/api/admin/users/{admin.id}", {"status": "suspended"}).status_code == 403  # nor admin accounts
-    assert d.post("/api/admin/users/invite", {"email": "dev2@example.org", "name": "Dev Two", "role": "developer"}).status_code == 403
+    assert d.post("/api/admin/users/invite", {"email": "adm2@example.org", "name": "Adm Two", "role": "admin"}).status_code == 403
     assert d.post("/api/admin/users/invite", {"email": "trainer9@example.org", "name": "Trainer Nine", "role": "trainer"}).status_code == 200
     assert d.get("/api/training/trainees?scope=all").status_code == 200  # can inspect learners when fixing issues
     assert d.get(f"/api/programs/{_program(db).id}").status_code == 200
