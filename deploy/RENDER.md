@@ -5,7 +5,7 @@
 ## الخطوات (مرة واحدة)
 1. ادخل https://render.com وسجّل بحساب GitHub نفسه (m08ij).
 2. **New ← Blueprint** ← اختر المستودع `salam-academy` ← Render يقرأ `render.yaml`.
-3. يطلب منك أربع قيم:
+3. يطلب منك ثلاث قيم:
    | المفتاح | ماذا تضع |
    |---|---|
    | `SALAM_TRIAL_EMAILS` | البريدات المسموحة مفصولة بفواصل، مثل: `a@x.com,b@y.com,c@z.com` |
