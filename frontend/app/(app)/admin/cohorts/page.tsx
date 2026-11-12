@@ -24,7 +24,7 @@ export default function Cohorts() {
   const act = async (fn: () => Promise<any>) => { setError(null); try { await fn(); toast(t("saved")); await load(); } catch (x) { setError(err(x)); } };
   return (
     <Guard perm="announce">
-      <Head eyebrow={t("nav_trainer")} title={t("nav_cohorts")} />
+      <Head icon="cohorts" eyebrow={t("nav_trainer")} title={t("nav_cohorts")} />
       {error && <Alert>{error}</Alert>}
       {can("cohorts") && <form className="card" onSubmit={(e) => { e.preventDefault(); act(() => post("/cohorts", { ...c, starts_on: c.starts_on || null, ends_on: c.ends_on || null, capacity: Number(c.capacity) })); }}>
         <h3>{t("cohort")}</h3>

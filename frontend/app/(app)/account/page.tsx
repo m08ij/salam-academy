@@ -73,7 +73,7 @@ function Inner() {
   const forcedPw = force === "password" && me.must_change_password;
   return (
     <>
-      <Head eyebrow={t("role_" + me.role)} title={t("nav_account")} sub={me.email} />
+      <Head icon="account" eyebrow={t("role_" + me.role)} title={t("nav_account")} sub={me.email} />
       {forcedMfa && <Alert kind="warn">{t("mfaSetupForced")}</Alert>}
       {forcedPw && <Alert kind="warn">{t("pwChangeForced")}</Alert>}
       <AppWidgets />

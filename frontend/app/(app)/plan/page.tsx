@@ -18,7 +18,7 @@ export default function Plan() {
   const A = (ar: string, en: string) => (lang === "ar" ? ar : en);
   return (
     <Guard perm="learn">
-      <Head eyebrow={t("nav_learn")} title={t("nav_plan")} sub={me?.share_plan ? A("خطتك مشاركة مع مدربك.", "Your plan is shared with your trainer.") : A("خطتك خاصة بك.", "Your plan is private to you.")} />
+      <Head icon="plan" eyebrow={t("nav_learn")} title={t("nav_plan")} sub={me?.share_plan ? A("خطتك مشاركة مع مدربك.", "Your plan is shared with your trainer.") : A("خطتك خاصة بك.", "Your plan is private to you.")} />
       <div className="card"><Field label={A("١. ملاحظة السلوك الحالي", "1. Observe current behavior")} id="o"><textarea className="inp" id="o" value={p.obs} maxLength={4000} onChange={(e) => change({ ...p, obs: e.target.value })} /></Field></div>
       <div className="card"><Field label={A("٢. تحديد السلوك المثالي", "2. Define the ideal behavior")} id="i"><textarea className="inp" id="i" value={p.ideal} maxLength={4000} onChange={(e) => change({ ...p, ideal: e.target.value })} /></Field></div>
       <div className="card"><h3>{A("٣–٤. القيم المستهدفة وخطة العمل", "3–4. Target values and action plan")}</h3>

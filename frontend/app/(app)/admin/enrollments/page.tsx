@@ -23,7 +23,7 @@ export default function Enrollments() {
   const act = async (fn: () => Promise<any>) => { setError(null); try { await fn(); toast(t("saved")); await load(); } catch (x) { setError(err(x)); } };
   return (
     <Guard perm="users">
-      <Head eyebrow={t("nav_users")} title={t("nav_enroll")} />
+      <Head icon="enroll" eyebrow={t("nav_users")} title={t("nav_enroll")} />
       {error && <Alert>{error}</Alert>}
       <form className="card" onSubmit={(e) => { e.preventDefault(); act(() => post("/admin/enrollments", { ...form, trainer_id: form.trainer_id || null, cohort_id: form.cohort_id || null })); }}>
         <div className="fgrid g4f">

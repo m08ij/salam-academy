@@ -33,7 +33,7 @@ export default function TraineeFile() {
   const act = async (fn: () => Promise<any>, ok: string) => { setError(null); try { await fn(); toast(ok); await load(); } catch (x) { setError(err(x)); } };
   return (
     <Guard perm="train">
-      <Head eyebrow={`${L([f.program.title_ar, f.program.title_en])} · ${st.graduated ? t("graduated") : `${t("level")} ${num(st.level, lang)}`}`} title={f.user.name} sub={`${t("trainer")}: ${f.trainer || "—"}`} right={<Link className="btn" href="/trainer">{t("back")}</Link>} />
+      <Head icon="trainer" eyebrow={`${L([f.program.title_ar, f.program.title_en])} · ${st.graduated ? t("graduated") : `${t("level")} ${num(st.level, lang)}`}`} title={f.user.name} sub={`${t("trainer")}: ${f.trainer || "—"}`} right={<Link className="btn" href="/trainer">{t("back")}</Link>} />
       {error && <Alert>{error}</Alert>}
       <LevelTrack levels={f.program.levels} current={st.level} graduated={st.graduated} />
       <Tabs<Tab> value={tab} onChange={setTab} tabs={[["over", t("criteria")], ["proj", t("project")], ["eval", t("evaluation")], ["shared", t("reflection")], ["hist", t("history")]]} />

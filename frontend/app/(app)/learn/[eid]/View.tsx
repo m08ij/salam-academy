@@ -28,7 +28,7 @@ export default function Journey() {
   const ev = jr.evaluation;
   return (
     <>
-      <Head eyebrow={L([tree.program.title_ar, tree.program.title_en])} title={t("toJourney")} sub={st.graduated ? t("graduated") : `${t("level")} ${num(st.level, lang)} / ${num(st.levels, lang)}`}
+      <Head icon="learn" eyebrow={L([tree.program.title_ar, tree.program.title_en])} title={t("toJourney")} sub={st.graduated ? t("graduated") : `${t("level")} ${num(st.level, lang)} / ${num(st.levels, lang)}`}
         right={<span className={`pill ${tree.trainer ? "acc" : "warn"}`}>{tree.trainer ? `${t("trainer")}: ${tree.trainer}` : t("noTrainer")}</span>} />
       <LevelTrack levels={tree.levels} current={st.level} graduated={st.graduated} />
       {tree.levels.map((lv: any) => (

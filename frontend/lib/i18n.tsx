@@ -1,5 +1,6 @@
 "use client";
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useState } from "react";
+import { flushSync } from "react-dom";
 import { widgetLang } from "./native";
 
 export type Lang = "ar" | "en";
@@ -76,12 +77,21 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     try { const s = localStorage.getItem("salam-lang"); if (s === "ar" || s === "en") setLangS(s); } catch {}
   }, []);
-  useEffect(() => {
+  // Layout effect so the direction flips inside the language view transition (see setLang).
+  useLayoutEffect(() => {
     document.documentElement.lang = lang;
     document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
     widgetLang(lang);
   }, [lang]);
-  const setLang = useCallback((l: Lang) => { setLangS(l); try { localStorage.setItem("salam-lang", l); } catch {} }, []);
+  const setLang = useCallback((l: Lang) => {
+    const apply = () => { setLangS(l); try { localStorage.setItem("salam-lang", l); } catch {} };
+    const doc = document as any, html = document.documentElement;
+    if (html.lang === l || !doc.startViewTransition || window.matchMedia("(prefers-reduced-motion: reduce)").matches) { apply(); return; }
+    // The page slides out and back in along the new reading direction.
+    html.classList.add("vt-lang", l === "en" ? "to-en" : "to-ar");
+    const vt = doc.startViewTransition(() => flushSync(apply));
+    vt.finished.finally(() => html.classList.remove("vt-lang", "to-en", "to-ar"));
+  }, []);
   const v = useMemo(() => {
     const i = lang === "ar" ? 0 : 1;
     const t = (k: string) => (D[k] ? D[k][i] : k);

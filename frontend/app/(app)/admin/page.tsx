@@ -1,15 +1,17 @@
 "use client";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import Icon from "@/components/icons";
 import { Guard } from "@/components/Shell";
-import { Alert, ConfirmButton, Field, Head, useToast } from "@/components/ui";
+import { Alert, Avatar, ConfirmButton, Drawer, Empty, Field, Head, Menu, Stats, useToast } from "@/components/ui";
 import { get, patch, post } from "@/lib/api";
 import { date, num, useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 
 const ROLES_BY: Record<string, string[]> = { owner: ["admin", "developer", "trainer", "trainee"], admin: ["developer", "trainer", "trainee"] };
+const ROLE_TONE: Record<string, string> = { owner: "gold", admin: "acc", developer: "info", trainer: "ok", trainee: "" };
 
 export default function Users() {
-  const { t, lang, err } = useI18n();
+  const { t, L, lang, err } = useI18n();
   const { me, can } = useSession();
   const toast = useToast();
   const [users, setUsers] = useState<any[] | null>(null);
@@ -17,43 +19,89 @@ export default function Users() {
   const [inv, setInv] = useState({ email: "", name: "", role: "trainee", locale: "ar" });
   const [error, setError] = useState<string | null>(null);
   const [devLink, setDevLink] = useState<string | null>(null);
+  const [open, setOpen] = useState(false);
+  const [q, setQ] = useState("");
+  const [roleF, setRoleF] = useState("all");
   const roles = ROLES_BY[me?.role || ""] || [];
   const load = useCallback(async () => { setUsers(await get("/admin/users")); setOv(await get("/admin/overview")); }, []);
   useEffect(() => { load().catch((x) => setError(err(x))); }, [load, err]);
   const act = async (fn: () => Promise<any>) => { setError(null); try { await fn(); toast(t("saved")); await load(); } catch (x) { setError(err(x)); } };
+  const close = useCallback(() => { setOpen(false); setDevLink(null); }, []);
+
+  const counts = useMemo(() => {
+    const c: Record<string, number> = { all: users?.length || 0 };
+    for (const u of users || []) c[u.role] = (c[u.role] || 0) + 1;
+    return c;
+  }, [users]);
+  const shown = (users || []).filter((u) => (roleF === "all" || u.role === roleF) && (!q.trim() || `${u.name} ${u.email}`.toLowerCase().includes(q.trim().toLowerCase())));
+
   return (
     <Guard perm="users">
-      <Head eyebrow={t("role_" + (me?.role || "admin"))} title={t("nav_users")} />
-      {ov && <div className="grid g4">{[[ov.users, lang === "ar" ? "المستخدمون" : "Users"], [ov.trainees, t("trainees")], [ov.invited, t("s_invited")], [ov.staff_without_mfa, lang === "ar" ? "فريق بلا تحقق بخطوتين" : "Team without 2-step"]].map(([v, l]) => <div key={String(l)} className="card stat"><span className="v">{num(v, lang)}</span><span className="l">{l}</span></div>)}</div>}
+      <Head icon="users" eyebrow={t("role_" + (me?.role || "admin"))} title={t("nav_users")}
+        sub={L(["ادعُ الفريق والمتدربين، وأدِر أدوارهم وحالات حساباتهم.", "Invite your team and trainees, and manage their roles and accounts."])}
+        right={<button className="btn pri" type="button" onClick={() => setOpen(true)}><Icon name="plus" />{t("invite")}</button>} />
+
+      <Stats items={[
+        { icon: "users", value: ov?.users, label: L(["المستخدمون", "Users"]), tone: "acc" },
+        { icon: "people", value: ov?.trainees, label: t("trainees"), tone: "ok" },
+        { icon: "mail", value: ov?.invited, label: t("s_invited"), tone: "info" },
+        { icon: "lock", value: ov?.staff_without_mfa, label: L(["فريق بلا تحقق بخطوتين", "Team without 2-step"]), tone: ov?.staff_without_mfa ? "bad" : "ok" },
+      ]} />
       {error && <Alert>{error}</Alert>}
-      <form className="card" onSubmit={(e) => { e.preventDefault(); setDevLink(null); act(async () => { const r = await post("/admin/users/invite", inv); setDevLink(r.dev_invite_link || null); setInv({ ...inv, email: "", name: "" }); }); }}>
-        <h3>{t("invite")}</h3>
-        <div className="fgrid g4f">
-          <Field label={t("name")} id="in"><input className="inp" id="in" value={inv.name} onChange={(e) => setInv({ ...inv, name: e.target.value })} required minLength={2} /></Field>
-          <Field label={t("email")} id="ie"><input className="inp" id="ie" type="email" value={inv.email} onChange={(e) => setInv({ ...inv, email: e.target.value })} required /></Field>
-          <Field label={t("role")} id="ir"><select className="inp" id="ir" value={inv.role} onChange={(e) => setInv({ ...inv, role: e.target.value })}>{roles.map((r) => <option key={r} value={r}>{t("role_" + r)}</option>)}</select></Field>
-          <Field label={t("language")} id="il"><select className="inp" id="il" value={inv.locale} onChange={(e) => setInv({ ...inv, locale: e.target.value })}><option value="ar">العربية</option><option value="en">English</option></select></Field>
+
+      <div className="toolbar">
+        <label className="search"><Icon name="search" /><input className="inp" placeholder={L(["ابحث بالاسم أو البريد…", "Search by name or e-mail…"])} value={q} onChange={(e) => setQ(e.target.value)} aria-label={t("search")} /></label>
+        <div className="chips" role="group" aria-label={t("role")}>
+          {["all", "owner", "admin", "developer", "trainer", "trainee"].filter((r) => r === "all" || counts[r]).map((r) => (
+            <button key={r} type="button" className="chip" aria-pressed={roleF === r} onClick={() => setRoleF(r)}>{r === "all" ? L(["الكل", "All"]) : t("role_" + r)}<span className="n">{num(counts[r] || 0, lang)}</span></button>
+          ))}
         </div>
-        <div className="row"><button className="btn pri" type="submit">{t("send")}</button><span className="tiny faint">{lang === "ar" ? "يصل للمدعو رابط لإنشاء كلمة مروره بنفسه؛ لا يرى أحد كلمات المرور." : "The invitee gets a link to set their own password; nobody else ever sees it."}</span></div>
-        {devLink && <Alert kind="warn">DEV: <span dir="ltr">{devLink}</span></Alert>}
-      </form>
-      {users && <div className="tbl-wrap"><table><thead><tr><th>{t("name")}</th><th>{t("email")}</th><th>{t("role")}</th><th>{t("status")}</th><th>2FA</th><th>{t("lastActive")}</th><th /></tr></thead><tbody>
-        {users.map((u) => {
-          const locked = u.id === me?.id || u.role === "owner" || (u.role === "admin" && me?.role !== "owner");
-          return <tr key={u.id}>
-            <td><b>{u.name}</b></td><td className="small" dir="ltr">{u.email}</td>
-            <td>{locked ? <span className="pill acc">{t("role_" + u.role)}</span> : <select className="inp sm" aria-label={t("role")} value={u.role} disabled={!can("roles")} onChange={(e) => act(() => patch(`/admin/users/${u.id}`, { role: e.target.value }))}>{[u.role, ...roles.filter((r) => r !== u.role)].map((r) => <option key={r} value={r}>{t("role_" + r)}</option>)}</select>}</td>
-            <td><span className={`pill ${u.status === "active" ? "ok" : u.status === "invited" ? "info" : "warn"}`}>{t("s_" + u.status)}</span>{u.locked && <span className="pill bad">🔒</span>}</td>
-            <td>{u.mfa_enabled ? "✓" : "—"}</td><td className="small">{date(u.last_login_at, lang)}</td>
-            <td>{!locked && <div className="row">
-              {u.status === "active" && <ConfirmButton className="btn sm danger" onConfirm={() => act(() => patch(`/admin/users/${u.id}`, { status: "suspended" }))}>{t("suspend")}</ConfirmButton>}
-              {u.status === "suspended" && <button className="btn sm" type="button" onClick={() => act(() => patch(`/admin/users/${u.id}`, { status: "active" }))}>{t("activate")}</button>}
-              {u.status === "invited" && <button className="btn sm" type="button" onClick={() => act(() => post(`/admin/users/${u.id}/resend-invite`))}>{t("resend")}</button>}
-              {u.status === "active" && <ConfirmButton className="btn sm" onConfirm={() => act(() => post(`/admin/users/${u.id}/force-reset`))}>{t("forceReset")}</ConfirmButton>}
-              {u.mfa_enabled && can("roles") && <ConfirmButton className="btn sm" onConfirm={() => act(() => post(`/admin/users/${u.id}/reset-mfa`))}>{t("resetMfa")}</ConfirmButton>}
-              {u.locked && <button className="btn sm" type="button" onClick={() => act(() => post(`/admin/users/${u.id}/unlock`))}>{t("unlock")}</button>}
-            </div>}</td></tr>;
-        })}</tbody></table></div>}
+      </div>
+
+      {users === null ? <div className="stack"><div className="skel" style={{ height: 60 }} /><div className="skel" style={{ height: 60 }} /></div>
+        : shown.length === 0 ? <Empty icon="users">{L(["لا نتائج مطابقة.", "No matching results."])}</Empty> :
+        <div className="tbl-wrap cards"><table>
+          <thead><tr><th>{t("name")}</th><th>{t("role")}</th><th>{t("status")}</th><th>{L(["التحقق بخطوتين", "2-step"])}</th><th>{t("lastActive")}</th><th /></tr></thead>
+          <tbody>{shown.map((u) => {
+            const locked = u.id === me?.id || u.role === "owner" || (u.role === "admin" && me?.role !== "owner");
+            return (
+              <tr key={u.id}>
+                <td className="lead"><span className="who-cell"><Avatar name={u.name} /><div><b>{u.name}{u.id === me?.id && <span className="tiny faint"> · {L(["أنت", "you"])}</span>}</b><span className="tiny faint" dir="ltr" style={{ textAlign: "start" }}>{u.email}</span></div></span></td>
+                <td data-label={t("role")}>{locked || !can("roles") ? <span className={`pill ${ROLE_TONE[u.role]}`}>{t("role_" + u.role)}</span> :
+                  <select className="inp sm" aria-label={t("role")} value={u.role} onChange={(e) => act(() => patch(`/admin/users/${u.id}`, { role: e.target.value }))}>{[u.role, ...roles.filter((r) => r !== u.role)].map((r) => <option key={r} value={r}>{t("role_" + r)}</option>)}</select>}</td>
+                <td data-label={t("status")}><span className={`pill ${u.status === "active" ? "ok" : u.status === "invited" ? "info" : "warn"}`}>{t("s_" + u.status)}</span>{u.locked && <span className="pill bad" title={t("unlock")}>🔒</span>}</td>
+                <td data-label={L(["التحقق بخطوتين", "2-step"])}>{u.mfa_enabled ? <span className="pill ok">✓ {L(["مفعّل", "On"])}</span> : <span className="pill">{L(["غير مفعّل", "Off"])}</span>}</td>
+                <td data-label={t("lastActive")} className="small faint">{date(u.last_login_at, lang)}</td>
+                <td>{!locked && (
+                  <Menu label={L(["إجراءات", "Actions"])}>
+                    {u.status === "invited" && <button className="btn" type="button" onClick={() => act(() => post(`/admin/users/${u.id}/resend-invite`))}><Icon name="mail" />{t("resend")}</button>}
+                    {u.status === "suspended" && <button className="btn" type="button" onClick={() => act(() => patch(`/admin/users/${u.id}`, { status: "active" }))}><Icon name="check" />{t("activate")}</button>}
+                    {u.locked && <button className="btn" type="button" onClick={() => act(() => post(`/admin/users/${u.id}/unlock`))}><Icon name="lock" />{t("unlock")}</button>}
+                    {u.status === "active" && <ConfirmButton className="btn" onConfirm={() => act(() => post(`/admin/users/${u.id}/force-reset`))}>{t("forceReset")}</ConfirmButton>}
+                    {u.mfa_enabled && can("roles") && <ConfirmButton className="btn" onConfirm={() => act(() => post(`/admin/users/${u.id}/reset-mfa`))}>{t("resetMfa")}</ConfirmButton>}
+                    {u.status === "active" && <ConfirmButton className="btn danger" onConfirm={() => act(() => patch(`/admin/users/${u.id}`, { status: "suspended" }))}>{t("suspend")}</ConfirmButton>}
+                  </Menu>
+                )}</td>
+              </tr>
+            );
+          })}</tbody></table></div>}
+
+      <Drawer open={open} onClose={close} title={t("invite")}>
+        <form className="stack" onSubmit={(e) => { e.preventDefault(); setDevLink(null); act(async () => { const r = await post("/admin/users/invite", inv); setDevLink(r.dev_invite_link || null); setInv({ ...inv, email: "", name: "" }); }); }}>
+          <p className="small muted">{L(["يصل للمدعو رابط لإنشاء كلمة مروره بنفسه؛ لا يرى أحد كلمات المرور.", "The invitee gets a link to set their own password; nobody else ever sees it."])}</p>
+          <Field label={t("name")} id="in"><input className="inp" id="in" value={inv.name} onChange={(e) => setInv({ ...inv, name: e.target.value })} required minLength={2} autoFocus /></Field>
+          <Field label={t("email")} id="ie"><input className="inp" id="ie" type="email" dir="ltr" value={inv.email} onChange={(e) => setInv({ ...inv, email: e.target.value })} required /></Field>
+          <Field label={t("role")} id="ir">
+            <div className="chips">{roles.map((r) => <button key={r} type="button" className="chip" aria-pressed={inv.role === r} onClick={() => setInv({ ...inv, role: r })}>{t("role_" + r)}</button>)}</div>
+          </Field>
+          <Field label={t("language")} id="il">
+            <div className="chips">{[["ar", "العربية"], ["en", "English"]].map(([k, l]) => <button key={k} type="button" className="chip" aria-pressed={inv.locale === k} onClick={() => setInv({ ...inv, locale: k })}>{l}</button>)}</div>
+          </Field>
+          {error && <Alert>{error}</Alert>}
+          <button className="btn pri lg block" type="submit"><Icon name="mail" />{t("send")}</button>
+          {devLink && <Alert kind="warn">DEV: <span dir="ltr" style={{ wordBreak: "break-all" }}>{devLink}</span></Alert>}
+        </form>
+      </Drawer>
     </Guard>
   );
 }

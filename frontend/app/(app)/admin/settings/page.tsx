@@ -16,7 +16,7 @@ export default function Settings() {
   const setG = (i: number, k: string, v: any) => { const g = s.grades.map((x: any) => ({ ...x, t: [...x.t] })); if (k === "min") g[i].min = Number(v); else g[i].t[Number(k)] = v; setS({ ...s, grades: g }); };
   return (
     <Guard perm="settings">
-      <Head eyebrow={t("nav_programs")} title={t("nav_settings")} />
+      <Head icon="settings" eyebrow={t("nav_programs")} title={t("nav_settings")} />
       {error && <Alert>{error}</Alert>}
       <div className="card"><h3>{lang === "ar" ? "معايير تقييم المدرب" : "Trainer rubric"}</h3>
         {s.rubric.map((c: string[], i: number) => <div key={i} className="row"><span className="pill">{num(i + 1, lang)}</span><input className="inp" style={{ flex: 1 }} aria-label="ar" value={c[0]} onChange={(e) => setR(i, 0, e.target.value)} /><input className="inp" style={{ flex: 1 }} aria-label="en" dir="ltr" value={c[1]} onChange={(e) => setR(i, 1, e.target.value)} />

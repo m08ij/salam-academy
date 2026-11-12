@@ -46,6 +46,9 @@ export default function Shell({ children }: { children: React.ReactNode }) {
   const all = visible.flatMap(([, items]) => items);
   const tabs = TAB_PRIORITY.map((h) => all.find(([href]) => href === h)).filter(Boolean).slice(0, 4) as Item[];
   const moreActive = !tabs.some(([href]) => isActive(href, path));
+  const current = [...all].sort((a, b) => b[0].length - a[0].length).find(([href]) => isActive(href, path));
+  const hour = new Date().getHours();
+  const greet = hour < 12 ? L(["صباح الخير", "Good morning"]) : hour < 18 ? L(["مساء الخير", "Good afternoon"]) : L(["مساء النور", "Good evening"]);
 
   const navList = (
     <nav className="nav" aria-label={t("mainNav")}>
@@ -61,7 +64,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
   );
   const langSwitch = (
     <div className="row" style={{ gap: 6, flexWrap: "nowrap" }}>
-      <div className="langsw" role="group" aria-label={t("language")} style={{ flex: 1 }}>
+      <div className="langsw" data-active={lang} role="group" aria-label={t("language")} style={{ flex: 1 }}>
         <button type="button" aria-pressed={lang === "ar"} onClick={() => setLang("ar")}>عربي</button>
         <button type="button" aria-pressed={lang === "en"} onClick={() => setLang("en")}>English</button>
       </div>
@@ -81,7 +84,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
       <aside className="rail">
         <Link className="brand" href="/"><img src={asset("/logo.png")} alt="" /><div><b>{t("brand")}</b><span>{t("tagline")}</span></div></Link>
         {navList}
-        <div className="foot">{langSwitch}{meCard}</div>
+        <div className="foot">{meCard}</div>
       </aside>
 
       <header className="topbar">
@@ -92,7 +95,15 @@ export default function Shell({ children }: { children: React.ReactNode }) {
         <Link href="/account" className="avatar" aria-label={t("nav_account")} style={{ textDecoration: "none", width: 34, height: 34, fontSize: ".85rem" }}>{initials(me.name)}</Link>
       </header>
 
-      <main id="main"><div className="wrap" key={path}><AppUpdate />{children}</div></main>
+      <main id="main">
+        <div className="appbar">
+          {current && <span className="crumb"><Icon name={current[3]} />{t(current[1])}</span>}
+          <span className="sp" />
+          <span className="greet">{greet}{lang === "ar" ? "، " : ", "}{me.name.split(/\s+/)[0]}</span>
+          {langSwitch}
+        </div>
+        <div className="wrap" key={path}><AppUpdate />{children}</div>
+      </main>
 
       <nav className="tabbar" aria-label={t("mainNav")}>
         {tabs.map(([href, key, , icon]) => {

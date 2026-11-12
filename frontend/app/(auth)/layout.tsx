@@ -30,7 +30,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         <div className="card">
           <div className="row between">
             <Link href="/" className="logo"><img src={asset("/logo.png")} alt="" /><div><b style={{ fontFamily: "var(--f-disp)" }}>{t("brand")}</b><div className="tiny faint">{t("tagline")}</div></div></Link>
-            <div className="row" style={{ gap: 4, flexWrap: "nowrap" }}><ThemeToggle /><div className="langsw" role="group" aria-label={t("language")}><button type="button" aria-pressed={lang === "ar"} onClick={() => setLang("ar")}>عربي</button><button type="button" aria-pressed={lang === "en"} onClick={() => setLang("en")}>EN</button></div></div>
+            <div className="row" style={{ gap: 4, flexWrap: "nowrap" }}><ThemeToggle /><div className="langsw" data-active={lang} role="group" aria-label={t("language")}><button type="button" aria-pressed={lang === "ar"} onClick={() => setLang("ar")}>عربي</button><button type="button" aria-pressed={lang === "en"} onClick={() => setLang("en")}>EN</button></div></div>
           </div>
           {DEMO && <div className="alert warn small">{t("demoBanner")}</div>}
           {children}

@@ -33,7 +33,7 @@ export default function Programs() {
   };
   return (
     <Guard perm="programs">
-      <Head eyebrow={t("nav_programs")} title={t("nav_programs")} sub={A("كل برنامج مستويات، ولكل مستوى مقرراته وشروط الانتقال منه ومشروعه.", "Each program has levels; each level has its own courses, promotion criteria and project.")}
+      <Head icon="programs" eyebrow={t("nav_programs")} title={t("nav_programs")} sub={A("كل برنامج مستويات، ولكل مستوى مقرراته وشروط الانتقال منه ومشروعه.", "Each program has levels; each level has its own courses, promotion criteria and project.")}
         right={<button className="btn pri" type="button" onClick={() => setP({ title_ar: "", title_en: "", desc_ar: "", desc_en: "", active: false, self_enroll: false, levels: [newLevel(1)] })}>{A("برنامج جديد", "New program")}</button>} />
       <div className="grid g3">{list.map((x) => <div key={x.id} className="card"><div className="row between"><span className={`pill ${x.active ? "ok" : ""}`}>{x.active ? A("مفعّل", "Active") : A("موقوف", "Inactive")}</span><span className="tiny faint">{num(x.enrollments, lang)} {t("trainees")}</span></div>
         <h3>{L([x.title_ar, x.title_en])}</h3><span className="small muted">{num(x.levels, lang)} {t("levels")} · {num(x.courses, lang)} · {num(x.lessons, lang)}</span>
