@@ -77,6 +77,7 @@ def import_identity(body: BundleIn, request: Request, ctx: Ctx = Depends(require
                               min_quiz=70, min_eval=0, min_project=0, min_final=70, w_quiz=100, w_eval=0, w_project=0, project_required=False))
         db.add(p)
         db.flush()
+    p.self_enroll = True  # learners join on their own; a trainer is assigned automatically
     lv = p.levels[0]
     courses = {c.position: c for c in lv.courses}
     for ci, ((a, b), (t_ar, t_en)) in enumerate(PARTS, 1):

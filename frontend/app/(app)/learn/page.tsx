@@ -8,6 +8,7 @@ import { date, num, useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { pushWidget } from "@/lib/native";
 import CourseAssistant from "@/components/CourseAssistant";
+import JoinCourse from "@/components/JoinCourse";
 
 type En = { id: string; program: { slug?: string; title_ar: string; title_en: string }; level: number; levels: number; graduated: boolean; trainer: string | null };
 
@@ -31,6 +32,8 @@ export default function Learn() {
   const [ens, setEns] = useState<En[] | null>(null);
   const [tree, setTree] = useState<Record<string, any>>({});
   const [ann, setAnn] = useState<any[]>([]);
+  const [openP, setOpenP] = useState<any[]>([]);
+  const [reload, setReload] = useState(0);
   useEffect(() => {
     get<En[]>("/learn/enrollments").then(async (r) => {
       r.sort((a, b) => Number(b.program.slug === "identity") - Number(a.program.slug === "identity")); // the Identity course leads
@@ -39,7 +42,8 @@ export default function Learn() {
       setTree(Object.fromEntries(trees.map((x) => [x.id, x])));
     });
     get("/announcements").then(setAnn).catch(() => {});
-  }, []);
+    get<any[]>("/learn/open").then(setOpenP).catch(() => {});
+  }, [reload]);
 
   // Keep the "My level" home-screen widget in sync with the first enrollment (Android app only).
   useEffect(() => {
@@ -63,8 +67,9 @@ export default function Learn() {
 
   return (
     <>
+      {openP.filter((p) => !p.enrollment_id).map((p) => <JoinCourse key={p.id} program={p} onJoined={() => setReload((n) => n + 1)} />)}
       {ens === null ? <div className="stack"><div className="skel" style={{ height: 210, borderRadius: 22 }} /><div className="skel" style={{ height: 80 }} /></div>
-        : ens.length === 0 ? <>
+        : ens.length === 0 && openP.some((p) => !p.enrollment_id) ? null : ens.length === 0 ? <>
           <div className="card hero"><span className="eyebrow">{t("brand")}</span><h1>{hello}{lang === "ar" ? "، " : ", "}{first} 👋</h1><p>{L(["مرحبًا بك في أكاديمية سلام.", "Welcome to Salam Academy."])}</p></div>
           <Empty icon="learn">{L(["لم تُسجَّل في برنامج بعد. سيسجّلك مسؤول المنصة ويُسند إليك مدربًا، وستظهر رحلتك هنا.", "You are not enrolled yet. The platform admin will enroll you and assign a trainer — your journey will appear here."])}</Empty>
         </> :

@@ -5,6 +5,8 @@ import { useCallback, useEffect, useState } from "react";
 import { Checks, LevelTrack, ScoreCards } from "@/components/level";
 import { Alert, Field, Head, StatusPill, useToast } from "@/components/ui";
 import { get, post } from "@/lib/api";
+import CourseMap from "@/components/CourseMap";
+import CourseAssistant from "@/components/CourseAssistant";
 import { date, num, useI18n } from "@/lib/i18n";
 
 export default function Journey() {
@@ -26,6 +28,19 @@ export default function Journey() {
   const st = jr.stats;
   const pj = jr.project;
   const ev = jr.evaluation;
+  if (tree.program.self_paced) {
+    const lv = tree.levels[0];
+    return (
+      <>
+        <Head icon="learn" eyebrow={L(["خريطة الدورة", "Course map"])} title={L([tree.program.title_ar, tree.program.title_en])}
+          sub={L(["كل فرع جزء من الدورة، وكل نقطة قسم. اضغط أي قسم لفتحه.", "Each branch is a part of the course and each node a section. Tap any section to open it."])}
+          right={<span className={`pill ${tree.trainer ? "acc" : "warn"}`}>{tree.trainer ? `${t("trainer")}: ${tree.trainer}` : t("noTrainer")}</span>} />
+        <CourseMap eid={eid} title={[tree.program.title_ar, tree.program.title_en]} graduated={st.graduated}
+          parts={lv.courses.map((c: any) => ({ title_ar: c.title_ar, title_en: c.title_en, lessons: c.lessons }))} />
+        {tree.program.slug === "identity" && <CourseAssistant />}
+      </>
+    );
+  }
   return (
     <>
       <Head icon="learn" eyebrow={L([tree.program.title_ar, tree.program.title_en])} title={t("toJourney")} sub={st.graduated ? t("graduated") : `${t("level")} ${num(st.level, lang)} / ${num(st.levels, lang)}`}

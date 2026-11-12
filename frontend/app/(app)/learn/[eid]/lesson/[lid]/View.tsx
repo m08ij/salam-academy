@@ -7,6 +7,7 @@ import { get, post, put } from "@/lib/api";
 import { num, useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import LessonBody from "@/components/LessonBody";
+import Reader from "@/components/Reader";
 import CourseAssistant from "@/components/CourseAssistant";
 
 export default function LessonPage() {
@@ -38,9 +39,9 @@ export default function LessonPage() {
   const body = L([ls.body_ar, ls.body_en]);
   return (
     <>
-      <Head icon="book" eyebrow={L([tree.program.title_ar, tree.program.title_en])} title={L([ls.title_ar, ls.title_en])} sub={`${num(ls.hours, lang)} ${t("hours")}`} right={ls.done ? <span className="pill ok">{t("completed")}</span> : undefined} />
+      <Head icon="book" eyebrow={L([tree.program.title_ar, tree.program.title_en])} title={L([ls.title_ar, ls.title_en])} sub={ls.hours < 1 ? `${num(Math.max(1, Math.round(ls.hours * 60)), lang)} ${L(["دقيقة قراءة", "min read"])}` : `${num(ls.hours, lang)} ${t("hours")}`} right={ls.done ? <span className="pill ok">{t("completed")}</span> : undefined} />
       {error && <Alert>{error}</Alert>}
-      <div className="card lesson-card"><LessonBody text={body} />{ls.video_url && <a className="btn" href={ls.video_url} target="_blank" rel="noopener noreferrer">{t("watch")} ↗</a>}</div>
+      <div className="card lesson-card">{tree.program.self_paced && body.split(/\s+/).length > 260 ? <Reader text={body} title={L([ls.title_ar, ls.title_en])} /> : <LessonBody text={body} />}{ls.video_url && <a className="btn" href={ls.video_url} target="_blank" rel="noopener noreferrer">{t("watch")} ↗</a>}</div>
       {ls.questions.length > 0 && (
         <div className="card">
           <h3>{t("quiz")}</h3>

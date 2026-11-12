@@ -104,12 +104,36 @@ def self_enroll(body: EnrollIn, request: Request, ctx: Ctx = Depends(current)):
         raise HTTPException(status_code=403, detail={"code": "enrollment_closed"})
     if ctx.db.scalar(select(Enrollment).where(Enrollment.user_id == ctx.user.id, Enrollment.program_id == p.id)):
         raise HTTPException(status_code=409, detail={"code": "already_enrolled"})
-    en = Enrollment(user_id=ctx.user.id, program_id=p.id)
+    en = Enrollment(user_id=ctx.user.id, program_id=p.id, trainer_id=least_loaded_trainer(ctx, p))
     ctx.db.add(en)
     ctx.db.flush()
-    audit.log(ctx.db, "self_enrolled", ctx.user, request, "enrollment", en.id, program=p.slug)
+    audit.log(ctx.db, "self_enrolled", ctx.user, request, "enrollment", en.id, program=p.slug, trainer=str(en.trainer_id) if en.trainer_id else None)
     ctx.db.commit()
-    return {"id": str(en.id)}
+    return {"id": str(en.id), "trainer": en.trainer.name if en.trainer else None}
+
+
+def least_loaded_trainer(ctx: Ctx, p: Program):
+    """Active trainer with the fewest learners in this program (ties: fewest overall), so support is shared evenly."""
+    from sqlalchemy import func
+
+    from ..models import User
+    trainers = ctx.db.scalars(select(User).where(User.role == "trainer", User.status == "active")).all()
+    if not trainers:
+        return None
+    load = dict(ctx.db.execute(select(Enrollment.trainer_id, func.count()).where(Enrollment.program_id == p.id, Enrollment.graduated_at.is_(None)).group_by(Enrollment.trainer_id)).all())
+    total = dict(ctx.db.execute(select(Enrollment.trainer_id, func.count()).group_by(Enrollment.trainer_id)).all())
+    return min(trainers, key=lambda t: (load.get(t.id, 0), total.get(t.id, 0), t.created_at)).id
+
+
+@router.get("/open")
+def open_programs(ctx: Ctx = Depends(current)):
+    """Programs a learner can join on their own, and whether they already have."""
+    mine = {e.program_id: e for e in ctx.db.scalars(select(Enrollment).where(Enrollment.user_id == ctx.user.id))}
+    out = []
+    for p in ctx.db.scalars(select(Program).where(Program.active.is_(True), Program.self_enroll.is_(True))):
+        out.append({"id": str(p.id), "slug": p.slug, "title_ar": p.title_ar, "title_en": p.title_en, "desc_ar": p.desc_ar, "desc_en": p.desc_en,
+                    "self_paced": p.self_paced, "enrollment_id": str(mine[p.id].id) if p.id in mine else None})
+    return out
 
 
 @router.get("/enrollments/{eid}")

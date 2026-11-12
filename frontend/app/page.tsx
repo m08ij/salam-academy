@@ -126,10 +126,10 @@ export default function Home() {
           </div>
           <div className="parts">
             {parts.map((c, i) => (
-              <details key={i} className="part" data-reveal style={{ ["--i" as any]: i }} open={i === 0}>
-                <summary><span className="pn">{n(i + 1)}</span><span className="pt"><b>{L([c[0], c[1]]).replace(/^.*?:\s*/, "")}</b>{c[2] ? <span className="tiny faint">{n(c[2])} {L(["درسًا", "lessons"])}</span> : null}</span><Icon name="arrow" className="ico chev" /></summary>
+              <div key={i} className="part" data-reveal style={{ ["--i" as any]: i, ["--c" as any]: ["var(--rel2)", "var(--rel1)", "var(--rel3)", "var(--accent)"][i % 4] }}>
+                <div className="part-h"><span className="pn">{n(i + 1)}</span><span className="pt"><b>{L([c[0], c[1]]).replace(/^.*?:\s*/, "")}</b>{c[2] ? <span className="tiny faint">{n(c[2])} {L(["درسًا", "lessons"])}</span> : null}</span></div>
                 {!!c[3]?.length && <ol>{c[3].map((ls, k) => <li key={k}>{L(ls)}</li>)}</ol>}
-              </details>
+              </div>
             ))}
           </div>
           <div className="how">

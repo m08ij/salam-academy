@@ -165,3 +165,23 @@ def test_provider_client_uses_fallback_models(ai, monkeypatch):
         assert calls == ["primary/model", "backup/model"]
     finally:
         s.ai_model, s.ai_fallback_models = saved
+
+
+def test_learner_joins_identity_alone_and_gets_least_loaded_trainer(db):
+    a = _owner_api()
+    _import(a)
+    busy, free = make_user("trainer"), make_user("trainer")
+    p = db.scalar(select(Program).where(Program.slug == "identity"))
+    a.post("/api/admin/enrollments", {"user_id": str(make_user().id), "program_id": str(p.id), "trainer_id": str(busy.id)})
+    t = Api()
+    t.login(make_user().email)
+    opened = t.get("/api/learn/open").json()
+    ident = next(x for x in opened if x["slug"] == "identity")
+    assert ident["enrollment_id"] is None and ident["self_paced"]
+    r = t.post("/api/learn/enrollments", {"program_id": ident["id"]})
+    assert r.status_code == 200, r.text
+    db.expire_all()
+    en = db.get(Enrollment, __import__("uuid").UUID(r.json()["id"]))
+    assert en.trainer_id != busy.id and en.trainer_id is not None  # the less busy trainer
+    assert t.post("/api/learn/enrollments", {"program_id": ident["id"]}).status_code == 409
+    assert next(x for x in t.get("/api/learn/open").json() if x["slug"] == "identity")["enrollment_id"] == r.json()["id"]
