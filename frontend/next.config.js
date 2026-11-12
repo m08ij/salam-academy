@@ -14,7 +14,11 @@ const csp = [
   "form-action 'self'",
   "object-src 'none'",
 ].join("; ");
-module.exports = {
+// DEPLOY_TARGET=pages → static preview for GitHub Pages (no server: no proxy, no response headers).
+const PAGES = process.env.DEPLOY_TARGET === "pages";
+const base = process.env.NEXT_PUBLIC_BASE_PATH || "";
+
+const server = {
   reactStrictMode: true,
   poweredByHeader: false,
   output: "standalone",
@@ -38,3 +42,14 @@ module.exports = {
     }];
   },
 };
+
+const pages = {
+  reactStrictMode: true,
+  output: "export",
+  distDir: ".next-pages", // separate from the dev server's .next so both can run side by side
+  basePath: base,
+  trailingSlash: true,
+  images: { unoptimized: true },
+};
+
+module.exports = PAGES ? pages : server;

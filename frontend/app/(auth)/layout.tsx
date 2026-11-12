@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useI18n } from "@/lib/i18n";
+import { DEMO, asset } from "@/lib/env";
 
 /** Split layout: a brand panel (desktop only) beside the form card. */
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
@@ -8,7 +9,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
   return (
     <div className="auth">
       <aside className="auth-side" aria-hidden>
-        <Link href="/" className="brand" style={{ color: "#fff" }}><img src="/logo.png" alt="" /><div><b>{t("brand")}</b><span style={{ color: "#BFE1DD" }}>{t("tagline")}</span></div></Link>
+        <Link href="/" className="brand" style={{ color: "#fff" }}><img src={asset("/logo.png")} alt="" /><div><b>{t("brand")}</b><span style={{ color: "#BFE1DD" }}>{t("tagline")}</span></div></Link>
         <svg className="rings" viewBox="0 0 400 400" fill="none" stroke="#fff" strokeWidth="1.2">
           <circle cx="200" cy="200" r="190" opacity=".25" /><circle cx="200" cy="200" r="140" opacity=".35" /><circle cx="200" cy="200" r="90" opacity=".45" />
           <circle cx="200" cy="10" r="7" fill="#E7CF4A" stroke="none" /><circle cx="340" cy="200" r="6" fill="#fff" stroke="none" opacity=".8" /><circle cx="200" cy="290" r="5" fill="#6FD8D0" stroke="none" />
@@ -27,9 +28,10 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       <div className="auth-main">
         <div className="card">
           <div className="row between">
-            <Link href="/" className="logo"><img src="/logo.png" alt="" /><div><b style={{ fontFamily: "var(--f-disp)" }}>{t("brand")}</b><div className="tiny faint">{t("tagline")}</div></div></Link>
+            <Link href="/" className="logo"><img src={asset("/logo.png")} alt="" /><div><b style={{ fontFamily: "var(--f-disp)" }}>{t("brand")}</b><div className="tiny faint">{t("tagline")}</div></div></Link>
             <div className="langsw" role="group" aria-label={t("language")}><button type="button" aria-pressed={lang === "ar"} onClick={() => setLang("ar")}>عربي</button><button type="button" aria-pressed={lang === "en"} onClick={() => setLang("en")}>EN</button></div>
           </div>
+          {DEMO && <div className="alert warn small">{t("demoBanner")}</div>}
           {children}
         </div>
       </div>

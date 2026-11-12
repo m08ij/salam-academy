@@ -253,6 +253,7 @@ th { background: var(--surface-2); font-weight: 700; color: var(--ink-2); font-s
 }
 
 /* ---------- public homepage ---------- */
+.demo-bar { background: var(--gold-soft); color: var(--warn); text-align: center; font-size: .84rem; font-weight: 600; padding: 7px 16px; border-bottom: 1px solid color-mix(in srgb, var(--gold) 40%, transparent); }
 .pub { background: var(--surface); }
 .pub-nav { position: sticky; top: 0; z-index: 30; background: color-mix(in srgb, var(--surface) 84%, transparent); backdrop-filter: saturate(1.4) blur(14px); -webkit-backdrop-filter: saturate(1.4) blur(14px); border-bottom: 1px solid transparent; transition: border-color .2s, box-shadow .2s; padding-top: env(safe-area-inset-top); }
 .pub-nav.scrolled { border-color: var(--line); box-shadow: var(--shadow-sm); }

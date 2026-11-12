@@ -9,3 +9,7 @@
 **/test.db
 **/*.db-journal
 **/.claude/
+**/.next-pages/
+frontend/out/
+frontend/public/demo/
+*.tsbuildinfo

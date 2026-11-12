@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import Icon, { type IconName } from "@/components/icons";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
+import { asset } from "@/lib/env";
 
 type Item = [string, string, string | null, IconName]; // href, label key, required permission, icon
 
@@ -73,13 +74,13 @@ export default function Shell({ children }: { children: React.ReactNode }) {
   return (
     <div className="shell">
       <aside className="rail">
-        <Link className="brand" href="/"><img src="/logo.png" alt="" /><div><b>{t("brand")}</b><span>{t("tagline")}</span></div></Link>
+        <Link className="brand" href="/"><img src={asset("/logo.png")} alt="" /><div><b>{t("brand")}</b><span>{t("tagline")}</span></div></Link>
         {navList}
         <div className="foot">{langSwitch}{meCard}</div>
       </aside>
 
       <header className="topbar">
-        <Link className="brand" href="/"><img src="/logo.png" alt="" /><div><b>{t("brand")}</b></div></Link>
+        <Link className="brand" href="/"><img src={asset("/logo.png")} alt="" /><div><b>{t("brand")}</b></div></Link>
         <span className="sp" />
         <button type="button" className="iconbtn" onClick={() => setLang(lang === "ar" ? "en" : "ar")} aria-label={t("language")} title={lang === "ar" ? "English" : "عربي"}><Icon name="globe" /></button>
         <Link href="/account" className="avatar" aria-label={t("nav_account")} style={{ textDecoration: "none", width: 34, height: 34, fontSize: ".85rem" }}>{initials(me.name)}</Link>

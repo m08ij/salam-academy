@@ -5,6 +5,7 @@
   python -m app.cli seed                                                      (catalog + default program)
   python -m app.cli prune                                                     (old rate-limit events and dead sessions)
   python -m app.cli gen-key                                                   (prints a new SALAM_MFA_ENCRYPTION_KEY)
+  python -m app.cli dump-public --out overview.json                           (public overview snapshot for the static preview)
 """
 import argparse
 import getpass
@@ -57,6 +58,8 @@ def main(argv=None) -> None:
     sub.add_parser("seed")
     sub.add_parser("prune")
     sub.add_parser("gen-key")
+    d = sub.add_parser("dump-public")
+    d.add_argument("--out", required=True)
     a = ap.parse_args(argv)
     if a.cmd == "gen-key":
         print(Fernet.generate_key().decode())
@@ -69,6 +72,20 @@ def main(argv=None) -> None:
         try:
             run(db)
             print("Catalog and default program loaded.")
+        finally:
+            db.close()
+    elif a.cmd == "dump-public":
+        import json
+        from pathlib import Path
+
+        from starlette.responses import Response
+
+        from .routers.public import overview
+        db = session_scope()
+        try:
+            Path(a.out).parent.mkdir(parents=True, exist_ok=True)
+            Path(a.out).write_text(json.dumps(overview(Response(), db), ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+            print(f"Wrote {a.out}")
         finally:
             db.close()
     elif a.cmd == "prune":

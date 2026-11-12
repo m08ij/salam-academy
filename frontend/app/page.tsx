@@ -5,6 +5,7 @@ import Icon, { type IconName } from "@/components/icons";
 import { get } from "@/lib/api";
 import { num, useI18n } from "@/lib/i18n";
 import { homeFor, useSession } from "@/lib/session";
+import { DEMO, asset } from "@/lib/env";
 
 type Pair = [string, string];
 type Overview = {
@@ -53,9 +54,10 @@ export default function Home() {
 
   return (
     <div className="pub">
+      {DEMO && <div className="demo-bar">{t("demoBanner")}</div>}
       <header className={`pub-nav ${scrolled ? "scrolled" : ""}`}>
         <div className="in">
-          <Link className="brand" href="/"><img src="/logo.png" alt="" /><div><b>{t("brand")}</b><span>{t("tagline")}</span></div></Link>
+          <Link className="brand" href="/"><img src={asset("/logo.png")} alt="" /><div><b>{t("brand")}</b><span>{t("tagline")}</span></div></Link>
           <nav className="links" aria-label={t("mainNav")}>
             <a href="#system">{L(["المنظومة", "The system"])}</a>
             <a href="#path">{L(["المسار التعليمي", "Learning path"])}</a>
@@ -232,7 +234,7 @@ export default function Home() {
 
       <footer className="pub-foot">
         <div className="in">
-          <span className="row" style={{ gap: 8 }}><img src="/logo.png" alt="" width={22} height={22} style={{ objectFit: "contain" }} />{t("brand")} · {n(new Date().getFullYear())}</span>
+          <span className="row" style={{ gap: 8 }}><img src={asset("/logo.png")} alt="" width={22} height={22} style={{ objectFit: "contain" }} />{t("brand")} · {n(new Date().getFullYear())}</span>
           <span>{L(["منظومة القيم مستوحاة من الأسماء الحسنى", "A values system inspired by the Beautiful Names"])}</span>
         </div>
       </footer>
@@ -267,7 +269,7 @@ function Orbit({ groups, lang }: { groups?: Overview["groups"]; lang: string }) 
           })}
         </g>
         <circle cx="250" cy="250" r="56" fill="var(--surface)" stroke="var(--line)" />
-        <image href="/logo.png" x="222" y="205" width="56" height="90" preserveAspectRatio="xMidYMid meet" />
+        <image href={asset("/logo.png")} x="222" y="205" width="56" height="90" preserveAspectRatio="xMidYMid meet" />
       </svg>
     </div>
   );
