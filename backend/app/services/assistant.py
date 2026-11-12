@@ -54,9 +54,9 @@ def _call(model: str, messages: list[dict]) -> httpx.Response:
     s = get_settings()
     headers = {"Authorization": f"Bearer {s.ai_api_key}", "Content-Type": "application/json",
                "HTTP-Referer": s.app_url, "X-Title": "Salam Academy"}
-    body = {"model": model, "messages": messages, "temperature": 0.2, "max_tokens": 700,
+    body = {"model": model, "messages": messages, "temperature": 0.2, "max_tokens": 1400,
             # Reasoning models spend tokens "thinking" first; keep that short and out of the answer.
-            "reasoning": {"effort": "minimal", "exclude": True}}
+            "reasoning": {"max_tokens": 256, "exclude": True}}  # small thinking budget, rest for the answer
     return httpx.post(f"{s.ai_base_url.rstrip('/')}/chat/completions", headers=headers, timeout=s.ai_timeout_seconds, json=body)
 
 

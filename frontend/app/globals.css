@@ -965,3 +965,19 @@ html.vt-lang.to-en { --lang-shift: 30px; } html.vt-lang.to-ar { --lang-shift: -3
 .danger-zone { border-color: color-mix(in srgb, var(--bad) 35%, var(--line)); }
 .danger-zone .acc-ic { background: var(--bad-soft); color: var(--bad); }
 @media (max-width: 620px) { .acc-hero { flex-wrap: wrap; padding: 18px; } .acc-score { flex-direction: row; } }
+
+/* compact sidebar and refined public bar */
+:root { --rail-w: 232px; }
+.rail { padding: 16px 10px; gap: 14px; background: color-mix(in srgb, var(--surface) 92%, var(--bg)); }
+.nav .grp { padding: 12px 10px 4px; font-size: .66rem; }
+.nav a { padding: 8px 10px; font-size: .9rem; gap: 10px; border-radius: 10px; }
+.nav a[aria-current="page"] { background: var(--accent); color: var(--accent-ink); box-shadow: 0 6px 16px -8px color-mix(in srgb, var(--accent) 80%, transparent); }
+.nav a[aria-current="page"] .ico { opacity: 1; }
+.nav a[aria-current="page"]::before { display: none; }
+.me { padding: 8px; gap: 8px; border-radius: 12px; }
+.me .avatar { width: 32px; height: 32px; font-size: .8rem; }
+.pub-nav .in { height: 68px; }
+.pub-nav .links { gap: 2px; padding: 4px; border-radius: 99px; background: var(--surface-2); border: 1px solid var(--line); }
+.pub-nav .links a { padding: 6px 14px; border-radius: 99px; font-size: .88rem; }
+.pub-nav .links a:hover { background: var(--surface); box-shadow: var(--shadow-sm); }
+.pub-nav .btn.pri { border-radius: 99px; padding-inline: 18px; }
