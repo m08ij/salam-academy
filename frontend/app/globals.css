@@ -231,6 +231,13 @@ th { background: var(--surface-2); font-weight: 700; color: var(--ink-2); font-s
   .vlist .opt { flex: none; white-space: nowrap; padding: 7px 14px; border-radius: 99px; scroll-snap-align: start; }
 }
 
+/* in-app update banner (Android app only) */
+.update { display: flex; gap: 12px; align-items: center; padding: 12px 14px; border-radius: var(--r); background: var(--gold-soft); border: 1px solid color-mix(in srgb, var(--gold) 45%, transparent); animation: rise .3s var(--ease); }
+.update-ic { width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center; background: var(--gold); color: #2A2104; flex: none; }
+.update-t { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.update-t .small { color: var(--ink-2); }
+.update .bar { margin-top: 4px; }
+
 /* ---------- auth ---------- */
 .auth { min-height: 100vh; min-height: 100dvh; display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); }
 .auth-side { position: relative; overflow: hidden; color: #fff; padding: 44px; display: flex; flex-direction: column; justify-content: space-between; gap: 32px;

@@ -5,6 +5,7 @@ import { Empty, Head } from "@/components/ui";
 import { get } from "@/lib/api";
 import { date, num, useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
+import { pushWidget } from "@/lib/native";
 
 type En = { id: string; program: { title_ar: string; title_en: string }; level: number; levels: number; graduated: boolean; trainer: string | null };
 
@@ -22,6 +23,21 @@ export default function Learn() {
     });
     get("/announcements").then(setAnn).catch(() => {});
   }, []);
+  // Keep the "My level" home-screen widget in sync with the first enrollment (Android app only).
+  useEffect(() => {
+    const e = ens?.[0];
+    const tr = e && tree[e.id];
+    if (!e || !tr) return;
+    const st = tr.stats;
+    const lv = tr.levels?.[e.level - 1];
+    const next = lv?.courses.flatMap((c: any) => c.lessons).find((x: any) => !x.done);
+    pushWidget({
+      lang, program: L([e.program.title_ar, e.program.title_en]), level: e.level, levels: e.levels,
+      levelTitle: lv ? L([lv.title_ar, lv.title_en]) : "", done: st?.lessons_done ?? 0, total: st?.lessons_total ?? 0,
+      final: st?.final_provisional ? null : st?.final ?? null, eligible: !!st?.eligible, graduated: e.graduated,
+      path: `learn/${e.id}`, next: next ? { t: L([next.title_ar, next.title_en]), path: `learn/${e.id}/lesson/${next.id}` } : null,
+    });
+  }, [ens, tree, lang, L]);
   return (
     <>
       <Head eyebrow={t("brand")} title={lang === "ar" ? `أهلًا، ${me?.name || ""}` : `Welcome, ${me?.name || ""}`} sub={t("nav_learn")} />

@@ -6,6 +6,29 @@ import { Alert, ConfirmButton, Field, Head, PasswordFields, useToast } from "@/c
 import { del, get, post, put } from "@/lib/api";
 import { date, useI18n } from "@/lib/i18n";
 import { homeFor, useSession } from "@/lib/session";
+import { isApp, pinWidget } from "@/lib/native";
+
+/** Android app only: add the home-screen widgets. */
+function AppWidgets() {
+  const { L } = useI18n();
+  const toast = useToast();
+  const [app, setApp] = useState(false);
+  useEffect(() => setApp(isApp()), []);
+  if (!app) return null;
+  const add = async (type: "value" | "progress") => {
+    if (!(await pinWidget(type))) toast(L(["اضغط مطوّلًا على الشاشة الرئيسية ← الأدوات (Widgets) ← أكاديمية سلام.", "Long-press your home screen → Widgets → Salam Academy."]));
+  };
+  return (
+    <div className="card">
+      <h3>{L(["أدوات الشاشة الرئيسية", "Home-screen widgets"])}</h3>
+      <p className="small muted">{L(["أضف «قيمة اليوم» لتذكّرك بقيمة وسلوك كل يوم (تعمل دون اتصال)، و«مستواي» لترى تقدّمك والدرس التالي.", "Add “Value of the day” for a daily value and behavior (works offline), and “My level” to see your progress and next lesson."])}</p>
+      <div className="row">
+        <button type="button" className="btn" onClick={() => add("value")}>{L(["أضف «قيمة اليوم»", "Add “Value of the day”"])}</button>
+        <button type="button" className="btn" onClick={() => add("progress")}>{L(["أضف «مستواي»", "Add “My level”"])}</button>
+      </div>
+    </div>
+  );
+}
 
 function MfaSetup({ onDone }: { onDone: (codes: string[]) => void }) {
   const { t, err } = useI18n();
@@ -53,6 +76,7 @@ function Inner() {
       <Head eyebrow={t("role_" + me.role)} title={t("nav_account")} sub={me.email} />
       {forcedMfa && <Alert kind="warn">{t("mfaSetupForced")}</Alert>}
       {forcedPw && <Alert kind="warn">{t("pwChangeForced")}</Alert>}
+      <AppWidgets />
       {error && <Alert>{error}</Alert>}
       {codes && <><Codes codes={codes} />{(forcedMfa || force === "mfa") && <button className="btn pri" type="button" onClick={async () => { const m = await refresh(); setCodes(null); if (m) router.replace(homeFor(m)); }}>{t("continue")}</button>}</>}
       <div className="grid g2">

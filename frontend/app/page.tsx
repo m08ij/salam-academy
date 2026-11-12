@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import AppUpdate from "@/components/AppUpdate";
 import Icon, { type IconName } from "@/components/icons";
 import { get } from "@/lib/api";
 import { num, useI18n } from "@/lib/i18n";
@@ -71,6 +72,7 @@ export default function Home() {
       </header>
 
       <main style={{ padding: 0 }}>
+        <div style={{ maxWidth: 1200, marginInline: "auto", padding: "12px 16px 0" }}><AppUpdate /></div>
         {/* ---------------- hero ---------------- */}
         <section className="p-hero">
           <div className="in">

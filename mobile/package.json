@@ -1,0 +1,16 @@
+{
+  "name": "salam-academy-android",
+  "version": "1.0.0",
+  "private": true,
+  "description": "غلاف أندرويد (Capacitor) لأكاديمية سلام — يفتح الموقع المنشور فتصل التحديثات تلقائيًا، مع ودجتات ومحدّث للتطبيق",
+  "scripts": {
+    "sync": "cap sync android",
+    "catalog": "node tools/make-catalog.js",
+    "release": "node tools/release.js"
+  },
+  "dependencies": {
+    "@capacitor/android": "6.2.0",
+    "@capacitor/cli": "6.2.0",
+    "@capacitor/core": "6.2.0"
+  }
+}

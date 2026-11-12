@@ -2,6 +2,7 @@
 import { usePathname, useRouter } from "next/navigation";
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { ApiError, get, post } from "./api";
+import { clearWidget } from "./native";
 
 export type Me = {
   id: string; email: string; name: string; locale: "ar" | "en"; role: "owner" | "admin" | "developer" | "trainer" | "trainee";
@@ -43,7 +44,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       else if ((me.mfa_setup_required || me.must_change_password) && !path.startsWith("/account")) router.replace(homeFor(me));
     }
   }, [loading, me, path, router]);
-  const logout = useCallback(async () => { try { await post("/auth/logout"); } catch {} setMe(null); router.replace("/login"); }, [router]);
+  const logout = useCallback(async () => { try { await post("/auth/logout"); } catch {} clearWidget(); setMe(null); router.replace("/login"); }, [router]);
   const can = useCallback((p: string) => !!me?.permissions.includes(p), [me]);
   return <Ctx.Provider value={{ me, loading, refresh, logout, can }}>{children}</Ctx.Provider>;
 }

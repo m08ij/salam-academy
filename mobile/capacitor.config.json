@@ -1,0 +1,16 @@
+{
+  "appId": "io.github.m08ij.salamacademy",
+  "appName": "أكاديمية سلام",
+  "webDir": "www",
+  "server": {
+    "url": "https://m08ij.github.io/salam-academy/",
+    "androidScheme": "https",
+    "cleartext": false,
+    "allowNavigation": ["m08ij.github.io"],
+    "errorPath": "error.html"
+  },
+  "android": {
+    "backgroundColor": "#F5F7F6",
+    "allowMixedContent": false
+  }
+}

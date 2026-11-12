@@ -1,0 +1,10 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">أكاديمية سلام</string>
+    <string name="title_activity_main">أكاديمية سلام</string>
+    <string name="package_name">io.github.m08ij.salamacademy</string>
+    <string name="custom_url_scheme">io.github.m08ij.salamacademy</string>
+    <string name="widget_value_desc">قيمة اليوم من منظومة سلام، مع ميزانها وسلوك عملي</string>
+    <string name="widget_progress_desc">مستواك في الأكاديمية والدرس التالي</string>
+    <string name="widget_next">قيمة أخرى</string>
+</resources>

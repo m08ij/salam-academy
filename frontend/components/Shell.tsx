@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import AppUpdate from "@/components/AppUpdate";
 import Icon, { type IconName } from "@/components/icons";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
@@ -86,7 +87,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
         <Link href="/account" className="avatar" aria-label={t("nav_account")} style={{ textDecoration: "none", width: 34, height: 34, fontSize: ".85rem" }}>{initials(me.name)}</Link>
       </header>
 
-      <main id="main"><div className="wrap" key={path}>{children}</div></main>
+      <main id="main"><div className="wrap" key={path}><AppUpdate />{children}</div></main>
 
       <nav className="tabbar" aria-label={t("mainNav")}>
         {tabs.map(([href, key, , icon]) => {

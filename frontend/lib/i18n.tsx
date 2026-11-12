@@ -1,5 +1,6 @@
 "use client";
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { widgetLang } from "./native";
 
 export type Lang = "ar" | "en";
 type Pair = [string, string];
@@ -76,6 +77,7 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     document.documentElement.lang = lang;
     document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
+    widgetLang(lang);
   }, [lang]);
   const setLang = useCallback((l: Lang) => { setLangS(l); try { localStorage.setItem("salam-lang", l); } catch {} }, []);
   const v = useMemo(() => {
