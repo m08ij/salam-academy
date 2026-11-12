@@ -60,7 +60,8 @@ export default function CourseAssistant({ context }: { context?: string }) {
     setQ(""); setBusy(true);
     setMsgs((m) => [...m, { role: "user", text }]);
     try {
-      const r = await post<any>("/assistant/ask", { question: text, lang });
+      const history = msgs.filter((m) => !m.note).slice(-6).map((m) => ({ role: m.role === "user" ? "user" : "assistant", content: m.text.slice(0, 500) }));
+      const r = await post<any>("/assistant/ask", { question: text, lang, history });
       setMsgs((m) => [...m, { role: "bot", text: r.answer, sources: r.sources, excerpts: r.excerpts, note: r.fallback ? "fallback" : undefined }]);
       setSt((s) => (s ? { ...s, used_today: s.used_today + 1 } : s));
     } catch (x) {

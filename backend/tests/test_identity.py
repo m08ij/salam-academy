@@ -146,30 +146,37 @@ def test_any_signed_in_user_can_ask_once_enabled(ai, monkeypatch):
     assert Api().post("/api/assistant/ask", {"question": "ما هي الهوية؟"}).status_code == 401  # never anonymous
 
 
-def test_provider_client_uses_fallback_models(ai, monkeypatch):
-    calls = []
+def test_provider_uses_native_free_models_fallback(ai, monkeypatch, caplog):
+    sent = []
 
     class R:
-        def __init__(self, code, text=""):
-            self.status_code, self._t = code, text
+        status_code = 200
 
         def json(self):
-            return {"choices": [{"message": {"content": self._t}}]}
+            return {"model": "nvidia/nemotron-3.5-lightning:free", "usage": {"prompt_tokens": 900, "completion_tokens": 120, "total_tokens": 1020},
+                    "choices": [{"finish_reason": "stop", "message": {"content": "<think>x</think>جواب [الدرس 1]"}}]}
 
     def post(url, headers, timeout, json):
-        calls.append(json["model"])
-        assert headers["Authorization"] == "Bearer k" and url.endswith("/chat/completions")
-        return R(503) if len(calls) == 1 else R(200, "<think>x</think>جواب [الدرس 1]")
+        sent.append(json)
+        return R()
     s = get_settings()
     saved = (s.ai_model, s.ai_fallback_models)
     try:
-        ai.ai_api_key, s.ai_model, s.ai_fallback_models = "k", "primary/model", "backup/model"
+        ai.ai_api_key = "k"
+        s.ai_model = "baidu/ernie-5.5-flash-preview:free"
+        s.ai_fallback_models = "nvidia/nemotron-3.5-lightning:free, openai/gpt-paid, nvidia/nemotron-3-ultra-550b-a55b:free"
         monkeypatch.setattr(assistant.httpx, "post", post)
+        caplog.set_level("INFO", logger="salam.assistant")
         assert assistant.complete([{"role": "user", "content": "q"}]) == "جواب [الدرس 1]"
-        assert calls == ["primary/model", "backup/model"]
+        body = sent[0]
+        assert len(sent) == 1 and "model" not in body  # one request; OpenRouter handles the fallback
+        assert body["models"] == ["baidu/ernie-5.5-flash-preview:free", "nvidia/nemotron-3.5-lightning:free", "nvidia/nemotron-3-ultra-550b-a55b:free"]
+        assert body["max_tokens"] == 700  # the paid model was dropped
+        assert "model=nvidia/nemotron-3.5-lightning:free" in caplog.text and "total=1020" in caplog.text
+        msgs = assistant.build_messages("سؤال", [("lesson", "1", "", "نص")], "ar", [{"role": "user", "content": "x" * 900}] * 9)
+        assert len(msgs) == 2 + 6 and len(msgs[1]["content"]) == 500  # history: last 6 turns, trimmed
     finally:
         s.ai_model, s.ai_fallback_models = saved
-
 
 def test_learner_joins_identity_alone_and_gets_least_loaded_trainer(db):
     a = _owner_api()

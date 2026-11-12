@@ -38,7 +38,7 @@ class Settings(BaseSettings):
     ai_api_key: str = Field(default="", validation_alias=AliasChoices("SALAM_AI_API_KEY", "OPENROUTER_API_KEY"))
     ai_base_url: str = "https://openrouter.ai/api/v1"
     ai_model: str = "baidu/ernie-5.5-flash-preview:free"
-    ai_fallback_models: str = ""  # comma-separated, tried in order when the primary model fails
+    ai_fallback_models: str = "nvidia/nemotron-3.5-lightning:free,nvidia/nemotron-3-ultra-550b-a55b:free"  # free only, in order
     ai_enabled_for_learners: bool = True  # every signed-in user may ask; set false to limit it to staff
     ai_daily_limit: int = 20  # questions per person per day
     ai_timeout_seconds: int = 45

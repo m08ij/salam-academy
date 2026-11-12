@@ -17,6 +17,7 @@ _answers: dict[tuple[str, str], str] = {}  # answer cache (per process); cleared
 class AskIn(BaseModel):
     question: str = Field(min_length=3, max_length=600)
     lang: str = Field(default="ar", pattern="^(ar|en)$")
+    history: list[dict] = Field(default_factory=list, max_length=6)  # last turns, for follow-up questions
 
 
 def _access(ctx: Ctx) -> str:
@@ -59,13 +60,14 @@ def ask(body: AskIn, request: Request, ctx: Ctx = Depends(current)):
         return {"answer": msg, "sources": [], "grounded": False, "fallback": False}
     passages = [(r.source, r.ref, r.title, r.text) for _, r in hits]
     key = (body.lang, " ".join(knowledge.tokens(body.question)))
-    if key in _answers:  # the same question (after normalisation) is answered once and reused: no new tokens
+    if not body.history and key in _answers:  # the same question (after normalisation) is answered once and reused: no new tokens
         return {"answer": _answers[key], "sources": uniq, "grounded": True, "fallback": False, "cached": True}
     try:
-        answer = assistant.complete(assistant.build_messages(body.question, passages, body.lang))
+        answer = assistant.complete(assistant.build_messages(body.question, passages, body.lang, body.history))
         if len(_answers) > 500:
             _answers.clear()
-        _answers[key] = answer
+        if not body.history:
+            _answers[key] = answer
         return {"answer": answer, "sources": uniq, "grounded": True, "fallback": False}
     except assistant.ProviderError:
         # Graceful fallback: show the most relevant material instead of an answer.
