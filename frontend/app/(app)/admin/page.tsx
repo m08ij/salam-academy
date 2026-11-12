@@ -7,7 +7,7 @@ import { get, patch, post } from "@/lib/api";
 import { date, num, useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 
-const ROLES_BY: Record<string, string[]> = { owner: ["admin", "developer", "trainer", "trainee"], admin: ["developer", "trainer", "trainee"] };
+const ROLES_BY: Record<string, string[]> = { owner: ["admin", "developer", "trainer", "trainee"], admin: ["developer", "trainer", "trainee"], developer: ["trainer", "trainee"] };
 const ROLE_TONE: Record<string, string> = { owner: "gold", admin: "acc", developer: "info", trainer: "ok", trainee: "" };
 
 export default function Users() {

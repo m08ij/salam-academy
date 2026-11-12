@@ -8,7 +8,6 @@ import { num, useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import LessonBody from "@/components/LessonBody";
 import Reader from "@/components/Reader";
-import CourseAssistant from "@/components/CourseAssistant";
 
 export default function LessonPage() {
   const { eid, lid } = useParams<{ eid: string; lid: string }>();
@@ -64,7 +63,6 @@ export default function LessonPage() {
           </div>
         </div>
       )}
-      {tree.program.slug === "identity" && <CourseAssistant context={L([ls.title_ar, ls.title_en])} />}
       <div className="card">
         <h3>{t("reflection")}</h3>
         <textarea className="inp" value={refl} maxLength={5000} placeholder={t("reflectionHint")} aria-label={t("reflection")} onChange={(e) => {

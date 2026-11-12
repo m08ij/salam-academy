@@ -135,11 +135,15 @@ def test_assistant_access_answers_fallback_and_limits(db, ai, monkeypatch):
     assert r.status_code == 429  # daily limit (2) reached
 
 
-def test_trainee_without_identity_enrollment_cannot_ask(ai):
+def test_any_signed_in_user_can_ask_once_enabled(ai, monkeypatch):
+    monkeypatch.setattr(assistant, "complete", lambda m: "جواب")
     ai.ai_api_key, ai.ai_enabled_for_learners = "test-key", True
     t = Api()
-    t.login(make_user().email)
+    t.login(make_user().email)  # not enrolled in anything
+    assert t.post("/api/assistant/ask", {"question": "ما هي الهوية؟"}).status_code == 200
+    ai.ai_enabled_for_learners = False
     assert t.post("/api/assistant/ask", {"question": "ما هي الهوية؟"}).status_code == 403
+    assert Api().post("/api/assistant/ask", {"question": "ما هي الهوية؟"}).status_code == 401  # never anonymous
 
 
 def test_provider_client_uses_fallback_models(ai, monkeypatch):

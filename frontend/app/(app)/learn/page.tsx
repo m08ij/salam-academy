@@ -7,7 +7,6 @@ import { get } from "@/lib/api";
 import { date, num, useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { pushWidget } from "@/lib/native";
-import CourseAssistant from "@/components/CourseAssistant";
 import JoinCourse from "@/components/JoinCourse";
 
 type En = { id: string; program: { slug?: string; title_ar: string; title_en: string }; level: number; levels: number; graduated: boolean; trainer: string | null };
@@ -118,8 +117,6 @@ export default function Learn() {
             </Fragment>
           );
         })}
-
-      {ens?.some((e) => e.program.slug === "identity") && <CourseAssistant />}
       <div className="card">
         <div className="row between"><h3>{t("announcements")}</h3>{ann.length > 0 && <span className="pill acc">{num(ann.length, lang)}</span>}</div>
         {ann.length ? ann.map((a) => (

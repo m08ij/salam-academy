@@ -39,7 +39,7 @@ class Settings(BaseSettings):
     ai_base_url: str = "https://openrouter.ai/api/v1"
     ai_model: str = "baidu/ernie-5.5-flash-preview:free"
     ai_fallback_models: str = ""  # comma-separated, tried in order when the primary model fails
-    ai_enabled_for_learners: bool = False  # staff can always test (when a key is set); learners only once this is true
+    ai_enabled_for_learners: bool = True  # every signed-in user may ask; set false to limit it to staff
     ai_daily_limit: int = 20  # questions per person per day
     ai_timeout_seconds: int = 45
 

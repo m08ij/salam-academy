@@ -6,7 +6,6 @@ import { Checks, LevelTrack, ScoreCards } from "@/components/level";
 import { Alert, Field, Head, StatusPill, useToast } from "@/components/ui";
 import { get, post } from "@/lib/api";
 import CourseMap from "@/components/CourseMap";
-import CourseAssistant from "@/components/CourseAssistant";
 import { date, num, useI18n } from "@/lib/i18n";
 
 export default function Journey() {
@@ -37,7 +36,6 @@ export default function Journey() {
           right={<span className={`pill ${tree.trainer ? "acc" : "warn"}`}>{tree.trainer ? `${t("trainer")}: ${tree.trainer}` : t("noTrainer")}</span>} />
         <CourseMap eid={eid} title={[tree.program.title_ar, tree.program.title_en]} graduated={st.graduated}
           parts={lv.courses.map((c: any) => ({ title_ar: c.title_ar, title_en: c.title_en, lessons: c.lessons }))} />
-        {tree.program.slug === "identity" && <CourseAssistant />}
       </>
     );
   }

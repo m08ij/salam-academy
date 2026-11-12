@@ -6,7 +6,6 @@ from sqlalchemy import select
 from .. import audit
 from ..config import get_settings
 from ..deps import Ctx, current
-from ..models import Enrollment, Program
 from ..security import ratelimit
 from ..services import assistant, knowledge
 
@@ -22,13 +21,11 @@ class AskIn(BaseModel):
 def _access(ctx: Ctx) -> str:
     """'learner' | 'staff' | '' — who may ask right now."""
     s = get_settings()
-    if ctx.can("preview") and s.ai_api_key:
-        return "staff"  # the team tests before learners get it
-    if s.ai_enabled_for_learners and s.ai_api_key and ctx.can("learn"):
-        p = ctx.db.scalar(select(Program).where(Program.slug == SLUG))
-        if p and ctx.db.scalar(select(Enrollment).where(Enrollment.user_id == ctx.user.id, Enrollment.program_id == p.id)):
-            return "learner"
-    return ""
+    if not s.ai_api_key:
+        return ""
+    if ctx.can("preview"):
+        return "staff"
+    return "learner" if s.ai_enabled_for_learners else ""  # every signed-in user once switched on
 
 
 @router.get("/status")

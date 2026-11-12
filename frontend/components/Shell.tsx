@@ -3,6 +3,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import AppUpdate from "@/components/AppUpdate";
+import CourseAssistant from "@/components/CourseAssistant";
 import ThemeToggle from "@/components/ThemeToggle";
 import Icon, { type IconName } from "@/components/icons";
 import { useI18n } from "@/lib/i18n";
@@ -104,6 +105,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
         </div>
         <div className="wrap" key={path}><AppUpdate />{children}</div>
       </main>
+      <CourseAssistant />
 
       <nav className="tabbar" aria-label={t("mainNav")}>
         {tabs.map(([href, key, , icon]) => {
