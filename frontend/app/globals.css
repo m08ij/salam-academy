@@ -981,3 +981,18 @@ html.vt-lang.to-en { --lang-shift: 30px; } html.vt-lang.to-ar { --lang-shift: -3
 .pub-nav .links a { padding: 6px 14px; border-radius: 99px; font-size: .88rem; }
 .pub-nav .links a:hover { background: var(--surface); box-shadow: var(--shadow-sm); }
 .pub-nav .btn.pri { border-radius: 99px; padding-inline: 18px; }
+
+/* row menu never clipped by the table; last rows open upward */
+.tbl-wrap:has(.menu[open]) { overflow: visible; }
+tbody tr:nth-last-child(-n+2) .menu-pop { top: auto; bottom: calc(100% + 6px); }
+.menu-pop { z-index: 40; }
+/* staff pages: calmer, clearer tables and controls */
+.tbl-wrap { border-radius: 16px; }
+th { background: transparent; border-bottom: 2px solid var(--line); font-size: .76rem; padding-block: 12px; }
+td { padding-block: 13px; }
+tbody tr:hover { background: color-mix(in srgb, var(--accent-soft) 35%, transparent); }
+select.inp.sm { min-width: 140px; border-radius: 10px; background-color: var(--bg); }
+.head h1 { font-size: clamp(1.35rem, 1.1rem + .8vw, 1.7rem); }
+.stats { gap: 10px; }
+.stat2 { padding: 14px; }
+.card { border-radius: 18px; }
