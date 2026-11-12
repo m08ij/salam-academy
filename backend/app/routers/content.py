@@ -114,6 +114,8 @@ def import_identity(body: BundleIn, request: Request, ctx: Ctx = Depends(require
     audit.log(db, "course_content_imported", ctx.user, request, "program", p.id, lessons=len(body.lessons), exam=len(body.exam), pages=len(body.book))
     db.commit()
     knowledge.invalidate(SLUG)
+    from . import assistant as _assistant
+    _assistant._answers.clear()
     return {"program_id": str(p.id), "created": created, "lessons": len(body.lessons), "exam_questions": len(body.exam), "knowledge_chunks": len(chunks)}
 
 

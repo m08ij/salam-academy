@@ -44,7 +44,7 @@ def label(source: str, ref: str, lang: str) -> str:
 
 def build_messages(question: str, passages: list[tuple[str, str, str, str]], lang: str) -> list[dict]:
     """passages: (source, ref, title, text)."""
-    ctx = "\n\n".join(f"[{label(s, r, lang)}]{(' — ' + t) if t else ''}\n{x}" for s, r, t, x in passages)
+    ctx = "\n\n".join(f"[{label(s, r, lang)}]{(' — ' + t) if t else ''}\n{x[:900]}" for s, r, t, x in passages)  # token budget: ~900 chars per passage
     user = (f"المقتطفات:\n{ctx}\n\nسؤال المتعلّم:\n{question}" if lang == "ar"
             else f"Excerpts:\n{ctx}\n\nLearner's question:\n{question}")
     return [{"role": "system", "content": SYSTEM[lang]}, {"role": "user", "content": user}]
@@ -54,9 +54,9 @@ def _call(model: str, messages: list[dict]) -> httpx.Response:
     s = get_settings()
     headers = {"Authorization": f"Bearer {s.ai_api_key}", "Content-Type": "application/json",
                "HTTP-Referer": s.app_url, "X-Title": "Salam Academy"}
-    body = {"model": model, "messages": messages, "temperature": 0.2, "max_tokens": 2500,
+    body = {"model": model, "messages": messages, "temperature": 0.2, "max_tokens": 700,
             # Reasoning models spend tokens "thinking" first; keep that short and out of the answer.
-            "reasoning": {"effort": "low", "exclude": True}}
+            "reasoning": {"effort": "minimal", "exclude": True}}
     return httpx.post(f"{s.ai_base_url.rstrip('/')}/chat/completions", headers=headers, timeout=s.ai_timeout_seconds, json=body)
 
 

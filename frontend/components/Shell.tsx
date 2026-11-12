@@ -13,14 +13,14 @@ import { asset } from "@/lib/env";
 type Item = [string, string, string | null, IconName]; // href, label key, required permission, icon
 
 const GROUPS: [string, Item[]][] = [
-  ["learnG", [["/learn", "nav_learn", "learn", "learn"], ["/values", "nav_values", null, "values"], ["/plan", "nav_plan", "learn", "plan"]]],
+  ["learnG", [["/learn", "nav_learn", "learn", "learn"], ["/plan", "nav_plan", "learn", "plan"], ["/values", "nav_values", null, "values"]]],
   ["trainG", [["/trainer", "nav_trainer", "train", "trainer"], ["/admin", "nav_users", "users", "users"], ["/admin/enrollments", "nav_enroll", "users", "enroll"], ["/admin/programs", "nav_programs", "programs", "programs"],
     ["/admin/cohorts", "nav_cohorts", "announce", "cohorts"], ["/admin/audit", "nav_audit", "audit", "audit"], ["/admin/settings", "nav_settings", "settings", "settings"]]],
   ["accG", [["/account", "nav_account", null, "account"]]],
 ];
 const GL: Record<string, [string, string]> = { learnG: ["التعلّم", "LEARNING"], trainG: ["التدريب والإدارة", "TRAINING & ADMIN"], accG: ["الحساب", "ACCOUNT"] };
 /** Which destinations earn a slot in the mobile tab bar, in priority order (the rest live under "More"). */
-const TAB_PRIORITY = ["/learn", "/trainer", "/admin", "/admin/programs", "/values", "/plan"];
+const TAB_PRIORITY = ["/learn", "/plan", "/trainer", "/admin", "/admin/programs", "/values"];
 const TAB_LABEL: Record<string, string> = { "/learn": "tab_learn", "/values": "tab_values", "/plan": "tab_plan", "/trainer": "tab_trainer", "/admin": "tab_users", "/admin/programs": "tab_programs" };
 
 const isActive = (href: string, path: string) => (href === "/admin" ? path === "/admin" : path === href || path.startsWith(href + "/"));

@@ -11,6 +11,7 @@ from ..services import assistant, knowledge
 
 router = APIRouter(prefix="/api/assistant", tags=["assistant"])
 SLUG = "identity"
+_answers: dict[tuple[str, str], str] = {}  # answer cache (per process); cleared on content import
 
 
 class AskIn(BaseModel):
@@ -42,7 +43,7 @@ def ask(body: AskIn, request: Request, ctx: Ctx = Depends(current)):
     if not who:
         raise HTTPException(status_code=403, detail={"code": "assistant_unavailable"})
     ratelimit.hit(ctx.db, f"ai:{ctx.user.id}", s.ai_daily_limit, 86400)
-    hits = knowledge.search(ctx.db, SLUG, body.question, k=8)
+    hits = knowledge.search(ctx.db, SLUG, body.question, k=5)
     sources = [{"source": r.source, "ref": r.ref, "title": r.title, "label": assistant.label(r.source, r.ref, body.lang)} for _, r in hits]
     # de-duplicate citations (several passages can come from the same lesson/page)
     seen, uniq = set(), []
@@ -57,8 +58,14 @@ def ask(body: AskIn, request: Request, ctx: Ctx = Depends(current)):
                else "I couldn't find anything about this in the course material. Try rephrasing, or ask your trainer.")
         return {"answer": msg, "sources": [], "grounded": False, "fallback": False}
     passages = [(r.source, r.ref, r.title, r.text) for _, r in hits]
+    key = (body.lang, " ".join(knowledge.tokens(body.question)))
+    if key in _answers:  # the same question (after normalisation) is answered once and reused: no new tokens
+        return {"answer": _answers[key], "sources": uniq, "grounded": True, "fallback": False, "cached": True}
     try:
         answer = assistant.complete(assistant.build_messages(body.question, passages, body.lang))
+        if len(_answers) > 500:
+            _answers.clear()
+        _answers[key] = answer
         return {"answer": answer, "sources": uniq, "grounded": True, "fallback": False}
     except assistant.ProviderError:
         # Graceful fallback: show the most relevant material instead of an answer.
