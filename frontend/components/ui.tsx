@@ -2,7 +2,8 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import Icon, { type IconName } from "@/components/icons";
 import { CountUp } from "@/lib/motion";
-import { useI18n } from "@/lib/i18n";
+import { get } from "@/lib/api";
+import { num, useI18n } from "@/lib/i18n";
 
 export function Head({ eyebrow, title, sub, right, icon }: { eyebrow?: string; title: string; sub?: string; right?: React.ReactNode; icon?: IconName }) {
   return (
@@ -121,13 +122,25 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
 }
 export const useToast = () => useContext(ToastCtx);
 
+/** Minimum password length set on the server (12 by default; a trial may lower it). Fetched once per page load. */
+let pwMinCache: Promise<number> | null = null;
+function usePasswordMin() {
+  const [n, setN] = useState(12);
+  useEffect(() => {
+    pwMinCache ??= get<{ password_min?: number }>("/public/config").then((c) => c.password_min || 12).catch(() => 12);
+    pwMinCache.then(setN);
+  }, []);
+  return n;
+}
+
 export function PasswordFields({ value, setValue, repeat, setRepeat, prefix = "pw" }: { value: string; setValue: (v: string) => void; repeat: string; setRepeat: (v: string) => void; prefix?: string }) {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
+  const min = usePasswordMin();
   return (
     <>
-      <Field label={t("newPassword")} id={`${prefix}-new`}><input className="inp" id={`${prefix}-new`} type="password" autoComplete="new-password" value={value} onChange={(e) => setValue(e.target.value)} minLength={12} maxLength={128} required /></Field>
+      <Field label={t("newPassword")} id={`${prefix}-new`}><input className="inp" id={`${prefix}-new`} type="password" autoComplete="new-password" value={value} onChange={(e) => setValue(e.target.value)} minLength={min} maxLength={128} required /></Field>
       <Field label={t("repeatPassword")} id={`${prefix}-rep`}><input className="inp" id={`${prefix}-rep`} type="password" autoComplete="new-password" value={repeat} onChange={(e) => setRepeat(e.target.value)} required /></Field>
-      <p className="tiny faint">{t("pwHint")}</p>
+      <p className="tiny faint">{t("pwHint").replace("{n}", num(min, lang))}</p>
     </>
   );
 }

@@ -52,4 +52,5 @@ def overview(response: Response, db: DB = Depends(get_db)):
 @router.get("/config")
 def config():
     """What the sign-in page needs to know. The allow-list itself is never published."""
-    return {"trial": bool(get_settings().trial_emails.strip())}
+    s = get_settings()
+    return {"trial": bool(s.trial_emails.strip()), "password_min": s.password_min_length}

@@ -26,6 +26,8 @@ services:
         value: "true"
       - key: SALAM_REQUIRE_STAFF_MFA    # set to true before real launch
         value: "false"
+      - key: SALAM_PASSWORD_MIN_LENGTH  # trial: simpler passwords (common/breached ones are still refused); use 12 for launch
+        value: "8"
       - key: SALAM_TRIAL_EMAILS         # comma-separated: only these e-mails can sign in during the trial
         sync: false
       - key: SALAM_OWNER_EMAIL          # first owner (created once); must be in SALAM_TRIAL_EMAILS

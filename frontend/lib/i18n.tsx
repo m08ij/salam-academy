@@ -14,7 +14,7 @@ const D: Record<string, Pair> = {
   loading: ["جارٍ التحميل…", "Loading…"], saved: ["حُفظ", "Saved"], none: ["—", "—"],
   mfaTitle: ["التحقق بخطوتين", "Two-step verification"], mfaCode: ["الرمز من تطبيق المصادقة", "Code from your authenticator app"], useRecovery: ["استخدم رمز استرداد", "Use a recovery code"], recoveryCode: ["رمز الاسترداد", "Recovery code"], useApp: ["استخدم تطبيق المصادقة", "Use the authenticator app"],
   newPassword: ["كلمة المرور الجديدة", "New password"], repeatPassword: ["أعد كتابة كلمة المرور", "Repeat the password"], currentPassword: ["كلمة المرور الحالية", "Current password"],
-  pwHint: ["١٢ حرفًا على الأقل. يُفضّل عبارة من عدة كلمات يسهل تذكّرها ويصعب تخمينها.", "At least 12 characters. A passphrase of several words is easy to remember and hard to guess."],
+  pwHint: ["{n} أحرف على الأقل. يُفضّل عبارة من عدة كلمات يسهل تذكّرها ويصعب تخمينها.", "At least {n} characters. A passphrase of several words is easy to remember and hard to guess."],
   pwMismatch: ["كلمتا المرور غير متطابقتين.", "The passwords do not match."],
   resetTitle: ["تعيين كلمة مرور جديدة", "Set a new password"], inviteTitle: ["إنشاء كلمة المرور لحسابك", "Create your account password"],
   forgotTitle: ["استعادة الدخول", "Recover access"], forgotDone: ["إن كان البريد مسجّلًا فستصلك رسالة برابط صالح لمدة قصيرة.", "If this e-mail has an account, a short-lived link is on its way."],

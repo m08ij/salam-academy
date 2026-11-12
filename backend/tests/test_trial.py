@@ -50,7 +50,7 @@ def test_invites_and_resets_respect_the_list(trial):
 
 
 def test_public_config_reports_trial_without_leaking_emails(trial):
-    assert Api().get("/api/public/config").json() == {"trial": False}
+    assert Api().get("/api/public/config").json() == {"trial": False, "password_min": 12}
     trial("secret.person@example.org")
     r = Api().get("/api/public/config")
-    assert r.json() == {"trial": True} and "secret.person" not in r.text
+    assert r.json()["trial"] is True and "secret.person" not in r.text
