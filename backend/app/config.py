@@ -24,6 +24,13 @@ class Settings(BaseSettings):
     allow_signup: bool = False
     # Trial period: comma-separated e-mails that may sign in, accept invites or be invited. Empty = everyone.
     trial_emails: str = ""
+    # Without an e-mail service (e.g. a free trial host), show invite links to the inviting admin so they can share them.
+    # Only takes effect while no SMTP host is configured.
+    show_invite_links: bool = False
+    # First owner, created once at start-up when no owner exists (python -m app.cli bootstrap). Must change the password on first sign-in.
+    owner_email: str = ""
+    owner_name: str = ""
+    owner_password: str = ""
 
     login_max_failures: int = 5
     lockout_minutes: int = 15
@@ -40,6 +47,10 @@ class Settings(BaseSettings):
     smtp_password: str = ""
     smtp_from: str = "Salam Academy <no-reply@example.org>"
     smtp_starttls: bool = True
+
+    @property
+    def share_invite_links(self) -> bool:
+        return self.environment == "development" or (self.show_invite_links and not self.smtp_host)
 
     def trial_allowed(self, email: str | None) -> bool:
         allowed = {e.strip().lower() for e in self.trial_emails.split(",") if e.strip()}

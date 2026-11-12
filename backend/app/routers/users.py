@@ -73,8 +73,8 @@ def invite(body: InviteIn, request: Request, ctx: Ctx = Depends(require("users")
     link = f"{s.app_url}/accept-invite?token={raw}"
     mailer.send(u.email, "invite", name=u.name, role=ROLE_LABEL[u.role], link=link, hours=s.invite_token_hours)
     out = _out(u)
-    if s.environment == "development":
-        out["dev_invite_link"] = link  # never exposed in production
+    if s.share_invite_links:
+        out["invite_link"] = link  # development, or a trial without e-mail (SALAM_SHOW_INVITE_LINKS)
     return out
 
 
@@ -87,8 +87,9 @@ def resend(uid: str, request: Request, ctx: Ctx = Depends(require("users"))):
     raw = issue_token(ctx.db, u, "invite", timedelta(hours=s.invite_token_hours))
     audit.log(ctx.db, "invite_resent", ctx.user, request, "user", u.id)
     ctx.db.commit()
-    mailer.send(u.email, "invite", name=u.name, role=ROLE_LABEL.get(u.role, u.role), link=f"{s.app_url}/accept-invite?token={raw}", hours=s.invite_token_hours)
-    return {"ok": True}
+    link = f"{s.app_url}/accept-invite?token={raw}"
+    mailer.send(u.email, "invite", name=u.name, role=ROLE_LABEL.get(u.role, u.role), link=link, hours=s.invite_token_hours)
+    return {"ok": True, "invite_link": link} if s.share_invite_links else {"ok": True}
 
 
 @router.patch("/{uid}")

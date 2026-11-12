@@ -34,6 +34,7 @@ def send(to: str, template: str, **ctx) -> None:
     msg.set_content(body.format(**ctx))
     if not s.smtp_host:
         OUTBOX.append(msg)
+        del OUTBOX[:-50]  # bounded: without SMTP this is only a debugging aid
         log.info("mail (outbox) to=%s template=%s", to, template)
         return
     try:

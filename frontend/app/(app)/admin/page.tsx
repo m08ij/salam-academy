@@ -19,6 +19,7 @@ export default function Users() {
   const [inv, setInv] = useState({ email: "", name: "", role: "trainee", locale: "ar" });
   const [error, setError] = useState<string | null>(null);
   const [devLink, setDevLink] = useState<string | null>(null);
+  const [shared, setShared] = useState<{ name: string; link: string } | null>(null);
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
   const [roleF, setRoleF] = useState("all");
@@ -48,6 +49,7 @@ export default function Users() {
         { icon: "lock", value: ov?.staff_without_mfa, label: L(["فريق بلا تحقق بخطوتين", "Team without 2-step"]), tone: ov?.staff_without_mfa ? "bad" : "ok" },
       ]} />
       {error && <Alert>{error}</Alert>}
+      {shared && <ShareLink title={L([`رابط دعوة ${shared.name}`, `Invite link for ${shared.name}`])} link={shared.link} onClose={() => setShared(null)} />}
 
       <div className="toolbar">
         <label className="search"><Icon name="search" /><input className="inp" placeholder={L(["ابحث بالاسم أو البريد…", "Search by name or e-mail…"])} value={q} onChange={(e) => setQ(e.target.value)} aria-label={t("search")} /></label>
@@ -74,7 +76,7 @@ export default function Users() {
                 <td data-label={t("lastActive")} className="small faint">{date(u.last_login_at, lang)}</td>
                 <td>{!locked && (
                   <Menu label={L(["إجراءات", "Actions"])}>
-                    {u.status === "invited" && <button className="btn" type="button" onClick={() => act(() => post(`/admin/users/${u.id}/resend-invite`))}><Icon name="mail" />{t("resend")}</button>}
+                    {u.status === "invited" && <button className="btn" type="button" onClick={() => act(async () => { const r = await post(`/admin/users/${u.id}/resend-invite`); if (r?.invite_link) { setShared({ name: u.name, link: r.invite_link }); } })}><Icon name="mail" />{t("resend")}</button>}
                     {u.status === "suspended" && <button className="btn" type="button" onClick={() => act(() => patch(`/admin/users/${u.id}`, { status: "active" }))}><Icon name="check" />{t("activate")}</button>}
                     {u.locked && <button className="btn" type="button" onClick={() => act(() => post(`/admin/users/${u.id}/unlock`))}><Icon name="lock" />{t("unlock")}</button>}
                     {u.status === "active" && <ConfirmButton className="btn" onConfirm={() => act(() => post(`/admin/users/${u.id}/force-reset`))}>{t("forceReset")}</ConfirmButton>}
@@ -87,7 +89,7 @@ export default function Users() {
           })}</tbody></table></div>}
 
       <Drawer open={open} onClose={close} title={t("invite")}>
-        <form className="stack" onSubmit={(e) => { e.preventDefault(); setDevLink(null); act(async () => { const r = await post("/admin/users/invite", inv); setDevLink(r.dev_invite_link || null); setInv({ ...inv, email: "", name: "" }); }); }}>
+        <form className="stack" onSubmit={(e) => { e.preventDefault(); setDevLink(null); act(async () => { const r = await post("/admin/users/invite", inv); setDevLink(r.invite_link || null); setInv({ ...inv, email: "", name: "" }); }); }}>
           <p className="small muted">{L(["يصل للمدعو رابط لإنشاء كلمة مروره بنفسه؛ لا يرى أحد كلمات المرور.", "The invitee gets a link to set their own password; nobody else ever sees it."])}</p>
           <Field label={t("name")} id="in"><input className="inp" id="in" value={inv.name} onChange={(e) => setInv({ ...inv, name: e.target.value })} required minLength={2} autoFocus /></Field>
           <Field label={t("email")} id="ie"><input className="inp" id="ie" type="email" dir="ltr" value={inv.email} onChange={(e) => setInv({ ...inv, email: e.target.value })} required /></Field>
@@ -99,9 +101,27 @@ export default function Users() {
           </Field>
           {error && <Alert>{error}</Alert>}
           <button className="btn pri lg block" type="submit"><Icon name="mail" />{t("send")}</button>
-          {devLink && <Alert kind="warn">DEV: <span dir="ltr" style={{ wordBreak: "break-all" }}>{devLink}</span></Alert>}
+          {devLink && <ShareLink title={L(["تمت الدعوة — انسخ الرابط وأرسله للمدعو", "Invited — copy the link and send it to them"])} link={devLink} />}
         </form>
       </Drawer>
     </Guard>
+  );
+}
+
+/** Invite link to hand over manually (hosts without e-mail). The link is single-use and expires. */
+function ShareLink({ title, link, onClose }: { title: string; link: string; onClose?: () => void }) {
+  const { L } = useI18n();
+  const [copied, setCopied] = useState(false);
+  return (
+    <div className="share-link" role="status">
+      <div className="row between"><b>{title}</b>{onClose && <button type="button" className="iconbtn" onClick={onClose} aria-label="close"><Icon name="close" /></button>}</div>
+      <code dir="ltr">{link}</code>
+      <div className="row">
+        <button type="button" className="btn pri sm" onClick={async () => { try { await navigator.clipboard.writeText(link); setCopied(true); setTimeout(() => setCopied(false), 2000); } catch {} }}>
+          <Icon name={copied ? "check" : "enroll"} />{copied ? L(["تم النسخ", "Copied"]) : L(["انسخ الرابط", "Copy link"])}</button>
+        <a className="btn sm" href={`https://wa.me/?text=${encodeURIComponent(link)}`} target="_blank" rel="noopener noreferrer">WhatsApp</a>
+      </div>
+      <span className="tiny faint">{L(["الرابط لمرة واحدة وصالح ٧٢ ساعة. أرسله للشخص نفسه فقط.", "Single-use, valid for 72 hours. Send it only to that person."])}</span>
+    </div>
   );
 }
