@@ -62,17 +62,21 @@ def trial_users() -> None:
                 print(f"SALAM_TRIAL_USERS entry ignored (expected email|name|role|password): {parts[0] if parts else ''}")
                 continue
             email, name, role, pw = parts[0].lower(), parts[1], parts[2], parts[3]
-            if db.scalar(select(User).where(User.email == email)):
-                continue
-            if role == "owner" and db.scalar(select(User).where(User.role == "owner", User.status != "deleted")):
+            existing = db.scalar(select(User).where(User.email == email))
+            if existing and existing.status != "invited":
+                continue  # never touch an account that is already in use
+            if role == "owner" and not (existing and existing.role == "owner") and db.scalar(select(User).where(User.role == "owner", User.status != "deleted")):
                 print(f"{email}: an owner already exists; skipped.")
                 continue
             errs = policy_errors(pw, email, name)
             if errs:
                 print(f"{email}: password rejected ({', '.join(errs)}); skipped.")
                 continue
-            u = User(email=email, name=name, role=role, status="active", password_hash=hash_password(pw), password_changed_at=utcnow(), email_verified_at=utcnow())
-            db.add(u)
+            u = existing or User(email=email)
+            u.name, u.role, u.status, u.password_hash = name, role, "active", hash_password(pw)
+            u.password_changed_at = u.email_verified_at = utcnow()
+            if not existing:
+                db.add(u)
             db.flush()
             audit.log(db, "trial_user_created", u, None, "user", u.id, role=role)
             print(f"Trial account ready: {email} ({role})")
