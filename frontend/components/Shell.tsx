@@ -3,6 +3,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import AppUpdate from "@/components/AppUpdate";
+import ThemeToggle from "@/components/ThemeToggle";
 import Icon, { type IconName } from "@/components/icons";
 import { useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
@@ -59,9 +60,12 @@ export default function Shell({ children }: { children: React.ReactNode }) {
     </nav>
   );
   const langSwitch = (
-    <div className="langsw" role="group" aria-label={t("language")}>
-      <button type="button" aria-pressed={lang === "ar"} onClick={() => setLang("ar")}>عربي</button>
-      <button type="button" aria-pressed={lang === "en"} onClick={() => setLang("en")}>English</button>
+    <div className="row" style={{ gap: 6, flexWrap: "nowrap" }}>
+      <div className="langsw" role="group" aria-label={t("language")} style={{ flex: 1 }}>
+        <button type="button" aria-pressed={lang === "ar"} onClick={() => setLang("ar")}>عربي</button>
+        <button type="button" aria-pressed={lang === "en"} onClick={() => setLang("en")}>English</button>
+      </div>
+      <ThemeToggle />
     </div>
   );
   const meCard = (
@@ -83,6 +87,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
       <header className="topbar">
         <Link className="brand" href="/"><img src={asset("/logo.png")} alt="" /><div><b>{t("brand")}</b></div></Link>
         <span className="sp" />
+        <ThemeToggle />
         <button type="button" className="iconbtn" onClick={() => setLang(lang === "ar" ? "en" : "ar")} aria-label={t("language")} title={lang === "ar" ? "English" : "عربي"}><Icon name="globe" /></button>
         <Link href="/account" className="avatar" aria-label={t("nav_account")} style={{ textDecoration: "none", width: 34, height: 34, fontSize: ".85rem" }}>{initials(me.name)}</Link>
       </header>

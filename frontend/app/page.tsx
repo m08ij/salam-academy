@@ -2,10 +2,12 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import AppUpdate from "@/components/AppUpdate";
+import ThemeToggle from "@/components/ThemeToggle";
 import Icon, { type IconName } from "@/components/icons";
 import { get } from "@/lib/api";
 import { num, useI18n } from "@/lib/i18n";
 import { homeFor, useSession } from "@/lib/session";
+import { CountUp, useReveal } from "@/lib/motion";
 import { DEMO, asset } from "@/lib/env";
 
 type Pair = [string, string];
@@ -47,6 +49,7 @@ export default function Home() {
     return () => window.removeEventListener("scroll", on);
   }, []);
 
+  useReveal(d);
   const n = (v: number | undefined) => num(v ?? 0, lang);
   const s = d?.stats;
   const academy = d?.academy[0];
@@ -55,6 +58,7 @@ export default function Home() {
 
   return (
     <div className="pub">
+      <div className="scroll-prog" aria-hidden />
       {DEMO && <div className="demo-bar">{t("demoBanner")}</div>}
       <header className={`pub-nav ${scrolled ? "scrolled" : ""}`}>
         <div className="in">
@@ -66,6 +70,7 @@ export default function Home() {
             <a href="#library">{L(["المكتبة", "Library"])}</a>
           </nav>
           <span className="sp" />
+          <ThemeToggle />
           <button type="button" className="iconbtn" onClick={() => setLang(lang === "ar" ? "en" : "ar")} aria-label={t("language")} title={lang === "ar" ? "English" : "عربي"}><Icon name="globe" /></button>
           {enter}
         </div>
@@ -75,6 +80,7 @@ export default function Home() {
         <div style={{ maxWidth: 1200, marginInline: "auto", padding: "12px 16px 0" }}><AppUpdate /></div>
         {/* ---------------- hero ---------------- */}
         <section className="p-hero">
+          <span className="blob a" aria-hidden /><span className="blob b" aria-hidden />
           <div className="in">
             <div className="copy">
               <span className="badge"><i>{L(["جديد", "New"])}</i>{L(["أكاديمية سلام الإلكترونية", "The Salam online academy"])}</span>
@@ -93,25 +99,25 @@ export default function Home() {
 
         {/* ---------------- stats ---------------- */}
         <div style={{ maxWidth: 1200, marginInline: "auto", padding: "0 20px", marginTop: -36, position: "relative" }}>
-          <div className="stats-strip reveal">
+          <div className="stats-strip" data-reveal="zoom">
             {([[s?.relations ?? 3, ["علاقات", "relationships"]], [s?.groups ?? 12, ["مجموعة للأسماء الحسنى", "groups of the Names"]], [s?.names ?? 106, ["اسمًا من الأسماء الحسنى", "Beautiful Names"]],
               [s?.values ?? 209, ["قيمة بموازينها", "values with scales"]], [s?.behaviors ?? 3177, ["سلوكًا عمليًا", "practical behaviors"]]] as [number, Pair][]).map(([v, l]) => (
-              <div key={l[1]}><b>{n(v)}</b><span>{L(l)}</span></div>
+              <div key={l[1]}><CountUp value={v} lang={lang} /><span>{L(l)}</span></div>
             ))}
           </div>
         </div>
 
         {/* ---------------- relationships ---------------- */}
         <section className="sec" id="system">
-          <div className="sec-h c">
+          <div className="sec-h c" data-reveal>
             <span className="kicker">{L(["منظومة سلام", "The Salam system"])}</span>
             <h2>{L(["السلام الداخلي يبدأ بالعدل في ثلاث علاقات", "Inner peace begins with justice in three relationships"])}</h2>
             <p>{L(["كل قيمة في المنظومة لها ميزان: نقطة اتزان بين الطغيان والخسران، وسلوكيات عملية تحوّلها إلى خُلق في حياتك اليومية.",
               "Every value has a scale — a point of balance between excess and deficit — and practical behaviors that turn it into character in daily life."])}</p>
           </div>
           <div className="rels">
-            {REL.map((r) => (
-              <div key={r.k} className="rel" style={{ ["--c" as any]: r.c }}>
+            {REL.map((r, i) => (
+              <div key={r.k} className="rel" data-reveal style={{ ["--c" as any]: r.c, ["--i" as any]: i }}>
                 <span className="dot"><Icon name={r.icon} /></span>
                 <h3>{L(r.t)}</h3>
                 <p className="muted small">{L(r.d)}</p>
@@ -124,14 +130,14 @@ export default function Home() {
         {/* ---------------- concepts ---------------- */}
         <div className="band">
           <section className="sec">
-            <div className="sec-h">
+            <div className="sec-h" data-reveal>
               <span className="kicker">{L(["الأسس والمفاهيم", "Foundations"])}</span>
               <h2>{L(["كيف تعمل المنظومة؟", "How does the system work?"])}</h2>
               {d && <p>{L(d.framework.intro)}</p>}
             </div>
             <div className="grid g3">
               {(d?.framework.concepts ?? Array.from({ length: 6 }, () => null)).map((c, i) => c ? (
-                <div key={i} className="card concept"><span className="n">{n(i + 1)}</span><h3>{L(c.t)}</h3><p>{L(c.d)}</p></div>
+                <div key={i} className="card concept" data-reveal style={{ ["--i" as any]: i % 3 }}><span className="n">{n(i + 1)}</span><h3>{L(c.t)}</h3><p>{L(c.d)}</p></div>
               ) : <div key={i} className="skel" style={{ height: 150 }} />)}
             </div>
           </section>
@@ -139,14 +145,14 @@ export default function Home() {
 
         {/* ---------------- groups ---------------- */}
         <section className="sec">
-          <div className="sec-h">
+          <div className="sec-h" data-reveal>
             <span className="kicker">{L(["الأسماء الحسنى", "The Beautiful Names"])}</span>
             <h2>{L(["١٢ مجموعة، ومهارات ذكاء عاطفي مستلهمة منها", "12 groups — and the emotional-intelligence skills drawn from them"])}</h2>
             <p>{L(["كل اسم يُدرس لغويًا وقرآنيًا وفي سياقه، ثم تُستخرج منه السلوكيات والمهارات والقيم.", "Each Name is studied linguistically and in its Quranic context; behaviors, skills and values are then derived from it."])}</p>
           </div>
           <div className="groups">
             {(d?.groups ?? Array.from({ length: 12 }, () => null)).map((g, i) => g ? (
-              <div key={g.id} className="grpc" style={{ ["--c" as any]: g.color }}>
+              <div key={g.id} className="grpc" data-reveal style={{ ["--c" as any]: g.color, ["--i" as any]: i % 4 }}>
                 <div className="row between"><span className="sw">{n(g.position)}</span><span className="pill">{n(g.names.length)} {L(["اسمًا", "Names"])}</span></div>
                 <h3>{L(g.t)}</h3>
                 <span className="names">{g.names.map((x) => L(x)).join(lang === "ar" ? "، " : ", ")}</span>
@@ -158,14 +164,14 @@ export default function Home() {
         {/* ---------------- learning path ---------------- */}
         <div className="band" id="path">
           <section className="sec">
-            <div className="sec-h">
+            <div className="sec-h" data-reveal>
               <span className="kicker">{L(["المسار التعليمي", "Learning path"])}</span>
               <h2>{academy ? L(academy.t) : L(["أفضل نسخة من نفسك", "Best Version of Yourself"])} — {L(["ثلاثة مستويات متدرّجة", "three progressive levels"])}</h2>
               <p>{L(["تتعلّم بالتسلسل: لا يُفتح المستوى التالي إلا بعد استيفاء شروطه واعتماد مدربك.", "You learn in sequence: the next level opens only once its criteria are met and your trainer signs off."])}</p>
             </div>
             <div className="path">
               {(academy?.levels ?? [null, null, null]).map((lv, i) => lv ? (
-                <div key={lv.position} className="lvl">
+                <div key={lv.position} className="lvl" data-reveal style={{ ["--i" as any]: i }}>
                   <span className="no">{L(["المستوى", "LEVEL"])} {n(lv.position)}</span>
                   <h3>{L(lv.t).replace(/^.*?:\s*/, "")}</h3>
                   <div className="row" style={{ gap: 6 }}><span className="pill acc">{n(lv.lessons)} {L(["درسًا", "lessons"])}</span><span className="pill">{n(lv.hours)} {L(["ساعة", "hours"])}</span></div>
@@ -175,21 +181,21 @@ export default function Home() {
               ) : <div key={i} className="skel" style={{ height: 280 }} />)}
             </div>
             <div className="criteria">
-              {CRIT.map((c) => <div key={c.t[1]} className="crit"><Icon name={c.icon} /><b>{L(c.t)}</b>{L(c.d)}</div>)}
+              {CRIT.map((c, i) => <div key={c.t[1]} className="crit" data-reveal style={{ ["--i" as any]: i }}><Icon name={c.icon} /><b>{L(c.t)}</b>{L(c.d)}</div>)}
             </div>
           </section>
         </div>
 
         {/* ---------------- programs ---------------- */}
         <section className="sec" id="programs">
-          <div className="sec-h">
+          <div className="sec-h" data-reveal>
             <span className="kicker">{L(["برامج سلام", "Salam programs"])}</span>
             <h2>{L(["برنامج لكل مرحلة ودور في الحياة", "A program for every stage and role in life"])}</h2>
             <p>{L(["تبدأ الأكاديمية ببرنامج «أفضل نسخة من نفسك»، وتتبعه بقية البرامج تباعًا.", "The academy opens with “Best Version of Yourself”; the other programs follow."])}</p>
           </div>
           <div className="grid g3">
             {(d?.programs ?? Array.from({ length: 6 }, () => null)).map((p, i) => p ? (
-              <div key={p.id} className={`card prog ${i === 0 ? "flag" : ""}`}>
+              <div key={p.id} className={`card prog ${i === 0 ? "flag" : ""}`} data-reveal style={{ ["--i" as any]: i % 3 }}>
                 <div className="row between"><span className="aud">{L(p.aud)}</span>{i === 0 && <span className="pill">{L(["متاح الآن", "Available now"])}</span>}</div>
                 <h3>{L(p.t)}</h3>
                 <p>{L(p.d)}</p>
@@ -202,13 +208,13 @@ export default function Home() {
         {/* ---------------- library ---------------- */}
         <div className="band" id="library">
           <section className="sec">
-            <div className="sec-h">
+            <div className="sec-h" data-reveal>
               <span className="kicker">{L(["المكتبة", "Library"])}</span>
               <h2>{L(["كتب ومحاضرات المنهج", "Books and lectures"])}</h2>
             </div>
             <div className="books">
               {(d?.books ?? []).map((b, i) => (
-                <a key={i} className="book" href={b.u || undefined} target="_blank" rel="noopener noreferrer">
+                <a key={i} className="book" data-reveal style={{ ["--i" as any]: i % 6 }} href={b.u || undefined} target="_blank" rel="noopener noreferrer">
                   <span className="cover" style={{ background: `linear-gradient(160deg, ${COVERS[i % COVERS.length]}, color-mix(in srgb, ${COVERS[i % COVERS.length]} 70%, #000))` }}>
                     <b>{L(b.t)}</b><span>{L(["سلسلة سلام", "Salam series"])}</span>
                   </span>
@@ -217,7 +223,7 @@ export default function Home() {
             </div>
             {!!d?.lectures.length && <div className="grid g3">
               {d.lectures.map((x, i) => (
-                <a key={i} className="lect" href={x.u} target="_blank" rel="noopener noreferrer"><span className="play"><Icon name="play" /></span><span className="small" style={{ fontWeight: 600 }}>{x.t}</span></a>
+                <a key={i} className="lect" data-reveal="fade" style={{ ["--i" as any]: i % 3 }} href={x.u} target="_blank" rel="noopener noreferrer"><span className="play"><Icon name="play" /></span><span className="small" style={{ fontWeight: 600 }}>{x.t}</span></a>
               ))}
             </div>}
           </section>
@@ -225,7 +231,7 @@ export default function Home() {
 
         {/* ---------------- CTA ---------------- */}
         <section className="sec tight">
-          <div className="cta-band">
+          <div className="cta-band" data-reveal="zoom">
             <Icon name="sparkle" className="ico" />
             <h2>{L(["رحلتك نحو الحياة الطيبة تبدأ بخطوة", "Your journey to the good life starts with one step"])}</h2>
             <p>{L(["الالتحاق بالأكاديمية بدعوة من فريق سلام. إن وصلتك دعوة، ادخل وابدأ مستواك الأول اليوم.", "Joining is by invitation from the Salam team. If you have received one, sign in and start your first level today."])}</p>
@@ -258,8 +264,9 @@ function Orbit({ groups, lang }: { groups?: Overview["groups"]; lang: string }) 
         <circle cx="250" cy="250" r="240" fill="url(#og)" />
         {R.map((r, i) => (
           <g key={r}>
-            <circle cx="250" cy="250" r={r} fill="none" stroke={rel[i][2]} strokeOpacity=".35" strokeWidth="1.5" strokeDasharray={i === 0 ? "2 7" : undefined} />
+            <circle className="ring" cx="250" cy="250" r={r} fill="none" stroke={rel[i][2]} strokeOpacity=".35" strokeWidth="1.5" strokeDasharray={i === 0 ? "2 7" : undefined} style={{ animationDelay: `${-i * 2.3}s` }} />
             <circle cx={250} cy={250 - r} r="5" fill={rel[i][2]} />
+            <circle className="pulse" cx={250} cy={250 - r} r="5" fill="none" stroke={rel[i][2]} strokeWidth="1.5" style={{ animationDelay: `${i * 0.9}s` }} />
             <text x="250" y={250 - r - 12} textAnchor="middle" fontSize="13" fill={rel[i][2]}>{lang === "ar" ? rel[i][0] : rel[i][1]}</text>
           </g>
         ))}
@@ -267,11 +274,13 @@ function Orbit({ groups, lang }: { groups?: Overview["groups"]; lang: string }) 
           {cols.map((c, i) => {
             const a = (i / cols.length) * Math.PI * 2 + 0.26;
             // Rounded so server and client render identical attributes (avoids a hydration mismatch).
-            return <circle key={i} cx={(250 + Math.cos(a) * 205).toFixed(2)} cy={(250 + Math.sin(a) * 205).toFixed(2)} r="11" fill={c} stroke="var(--surface)" strokeWidth="3" />;
+            return <circle key={i} cx={(250 + Math.cos(a) * 205).toFixed(2)} cy={(250 + Math.sin(a) * 205).toFixed(2)} r="11" fill={c} stroke="var(--surface)" strokeWidth="3" style={{ animationDelay: `${-i * 0.37}s` }} />;
           })}
         </g>
-        <circle cx="250" cy="250" r="56" fill="var(--surface)" stroke="var(--line)" />
-        <image href={asset("/logo.png")} x="222" y="205" width="56" height="90" preserveAspectRatio="xMidYMid meet" />
+        <g className="core">
+          <circle cx="250" cy="250" r="56" fill="var(--surface)" stroke="var(--line)" />
+          <image href={asset("/logo.png")} x="222" y="205" width="56" height="90" preserveAspectRatio="xMidYMid meet" />
+        </g>
       </svg>
     </div>
   );
