@@ -11,11 +11,12 @@ import { CountUp, useReveal } from "@/lib/motion";
 import { DEMO, asset } from "@/lib/env";
 
 type Pair = [string, string];
+type Part = [string, string, number?, Pair[]?]; // title ar, title en, lesson count, lesson titles
 type Overview = {
   stats: { relations: number; groups: number; names: number; values: number; behaviors: number };
   relations: Record<string, number>;
   groups: { id: number; position: number; t: Pair; d: Pair; color: string; skills: [string[], string[]]; names: Pair[] }[];
-  academy: { slug: string; t: Pair; d: Pair; levels: { position: number; t: Pair; d: Pair; courses: Pair[]; lessons: number; hours: number; project: Pair | null }[] }[];
+  academy: { slug: string; self_paced?: boolean; t: Pair; d: Pair; levels: { position: number; t: Pair; d: Pair; courses: Part[]; lessons: number; hours: number; project: Pair | null }[] }[];
   framework: { title: Pair; intro: Pair; concepts: { t: Pair; d: Pair }[] };
   programs: { id: string; t: Pair; aud: Pair; dur?: Pair; d: Pair; out: Pair[]; url: string }[];
   books: { t: Pair; d: Pair; u: string }[];
@@ -37,6 +38,18 @@ const CRIT: { icon: IconName; t: Pair; d: Pair }[] = [
 /** Arabic counted noun for "meaning": ٣–١٠ take the plural, everything else the singular. */
 const meaningsAr = (n: number) => (n >= 3 && n <= 10 ? "معانٍ" : "معنى");
 
+/** Shown when the course outline is not loaded yet (or on the static preview). */
+const IDENTITY_PARTS: Part[] = [
+  ["من أنت؟ الهوية والعلامة الشخصية", "Who are you? Identity and personal brand"], ["الإيمان ومنظومة القناعات", "Faith and the belief system"],
+  ["القيم والمهارات وملامح الشخصية", "Values, skills and personal traits"], ["هويتي المتكاملة", "My integrated identity"],
+];
+const HOW: [IconName, Pair, Pair][] = [
+  ["learn", ["بوتيرتك أنت", "At your own pace"], ["تتقدّم في الأقسام متى شئت، ويُحفظ تقدّمك تلقائيًا.", "Move through the sections whenever you like; progress is saved."]],
+  ["trainer", ["مدرب يتابعك", "A trainer beside you"], ["يرى مدربك تقدّمك ونتائجك، ويساعدك حين تحتاج.", "Your trainer sees your progress and results, and steps in when you need help."]],
+  ["sparkle", ["مساعد ذكي", "AI assistant"], ["اسأل عن أي فكرة في الدورة، ويجيبك من الدروس والكتاب مع ذكر المصدر.", "Ask about any idea; it answers from the lessons and the book, citing the source."]],
+  ["medal", ["اختبار وإتمام", "Exam & completion"], ["اختبار نهائي (٧٠٪ للنجاح) تُتمّ به الدورة.", "A final exam (70% to pass) completes the course."]],
+];
+
 const COVERS = ["#0A5C66", "#7A4E8F", "#A8800C", "#23774A", "#2A5E8C", "#B4473B", "#0B7F7A", "#5B4B8A", "#8A6B1D", "#1F6F8B", "#9C3D5B", "#3E7C59", "#6A5ACD"];
 
 export default function Home() {
@@ -55,7 +68,10 @@ export default function Home() {
   useReveal(d);
   const n = (v: number | undefined) => num(v ?? 0, lang);
   const s = d?.stats;
-  const academy = d?.academy[0];
+  const academy = d?.academy.find((a) => a.slug === "best-version");
+  const identity = d?.academy.find((a) => a.slug === "identity");
+  const parts: Part[] = identity?.levels[0]?.courses ?? IDENTITY_PARTS;
+  const sections = parts.reduce((a, c) => a + (c[3]?.filter((x) => !/اختبار|exam/i.test(x[0] + x[1])).length ?? 0), 0) || 23;
   const enter = me ? <Link className="btn pri" href={homeFor(me)}>{L(["لوحتي", "My dashboard"])}<Icon name="arrow" className="ico flip" /></Link>
     : <Link className="btn pri" href="/login">{t("signIn")}</Link>;
 
@@ -67,6 +83,7 @@ export default function Home() {
         <div className="in">
           <Link className="brand" href="/"><img src={asset("/logo.png")} alt="" /><div><b>{t("brand")}</b><span>{t("tagline")}</span></div></Link>
           <nav className="links" aria-label={t("mainNav")}>
+            <a href="#course">{L(["الدورة", "The course"])}</a>
             <a href="#system">{L(["المنظومة", "The system"])}</a>
             <a href="#path">{L(["المسار التعليمي", "Learning path"])}</a>
             <a href="#programs">{L(["البرامج", "Programs"])}</a>
@@ -86,22 +103,46 @@ export default function Home() {
           <span className="blob a" aria-hidden /><span className="blob b" aria-hidden />
           <div className="in">
             <div className="copy">
-              <span className="badge"><i>{L(["جديد", "New"])}</i>{L(["أكاديمية سلام الإلكترونية", "The Salam online academy"])}</span>
-              <h1>{lang === "ar" ? <>كن <em>أفضل نسخة</em> من نفسك</> : <>Become the <em>best version</em> of yourself</>}</h1>
-              <p className="lead">{L(["برنامج صحة نفسية وتنمية ذات مبني على القيم؛ يجمع الإيمان بالله ﷻ وأسمائه الحسنى مع علم النفس الإيجابي والذكاء العاطفي، في مسار متدرّج يرافقك فيه مدرب.",
-                "A values-based mental-health and personal-growth program that brings together faith in Allah and His Beautiful Names with positive psychology and emotional intelligence — in a step-by-step path with a trainer beside you."])}</p>
+              <span className="badge"><i>{L(["دورة", "Course"])}</i>{L(["ذاتية الوتيرة · بمتابعة مدرب", "Self-paced · trainer-supported"])}</span>
+              <h1>{lang === "ar" ? <>هويتي المتكاملة و<em>علامتي الشخصية</em></> : <>My integrated identity & <em>personal brand</em></>}</h1>
+              <p className="lead">{L(["ما الذي يقوله الآخرون عنك؟ وهل صمّمت ملامح هويتك بنفسك؟ دورة تبني منظومة قناعاتك وقيمك ومهارات الذكاء العاطفي، لتصنع هوية قوية ثابتة وعلامة شخصية واضحة بإذن الله.",
+                "What do others say about you? Did you design your identity yourself? A course that builds your beliefs, values and emotional-intelligence skills, so you shape a strong, consistent identity and a clear personal brand."])}</p>
               <div className="cta">
                 {me ? <Link className="btn pri lg" href={homeFor(me)}>{L(["تابع رحلتك", "Continue your journey"])}<Icon name="arrow" className="ico flip" /></Link>
-                  : <Link className="btn pri lg" href="/login">{L(["ادخل إلى الأكاديمية", "Enter the academy"])}<Icon name="arrow" className="ico flip" /></Link>}
-                <a className="btn lg" href="#system">{L(["تعرّف على المنظومة", "Explore the system"])}</a>
+                  : <Link className="btn pri lg" href="/login">{L(["ابدأ الدورة", "Start the course"])}<Icon name="arrow" className="ico flip" /></Link>}
+                <a className="btn lg" href="#course">{L(["محتوى الدورة", "Course outline"])}</a>
               </div>
             </div>
             <Orbit groups={d?.groups} lang={lang} />
           </div>
         </section>
 
+        {/* ---------------- the Identity course ---------------- */}
+        <section className="sec" id="course">
+          <div className="sec-h c" data-reveal>
+            <span className="kicker">{L(["الدورة", "The course"])}</span>
+            <h2>{L([`${n(sections)} قسمًا في أربعة أجزاء، واختبار نهائي`, `${sections} sections in four parts, and a final exam`])}</h2>
+            <p>{L(["رحلة بين العلم والفلسفة والإيمانيات وأسس من علوم الإدارة والإنسانيات، بأمثلة وتمارين عملية ويرافقها كتاب الدورة.", "A journey across science, philosophy, faith and the foundations of management and the humanities, with examples, practical exercises and the course book."])}</p>
+          </div>
+          <div className="parts">
+            {parts.map((c, i) => (
+              <details key={i} className="part" data-reveal style={{ ["--i" as any]: i }} open={i === 0}>
+                <summary><span className="pn">{n(i + 1)}</span><span className="pt"><b>{L([c[0], c[1]]).replace(/^.*?:\s*/, "")}</b>{c[2] ? <span className="tiny faint">{n(c[2])} {L(["درسًا", "lessons"])}</span> : null}</span><Icon name="arrow" className="ico chev" /></summary>
+                {!!c[3]?.length && <ol>{c[3].map((ls, k) => <li key={k}>{L(ls)}</li>)}</ol>}
+              </details>
+            ))}
+          </div>
+          <div className="how">
+            {HOW.map(([ic, ti, de], i) => (
+              <div key={ti[1]} className="card concept" data-reveal style={{ ["--i" as any]: i }}><span className="n"><Icon name={ic} /></span><h3>{L(ti)}</h3><p>{L(de)}</p></div>
+            ))}
+          </div>
+        </section>
+
+        <div className="divider-band" data-reveal><span>{L(["استكشف منظومة سلام", "Explore the Salam system"])}</span></div>
+
         {/* ---------------- stats ---------------- */}
-        <div style={{ maxWidth: 1200, marginInline: "auto", padding: "0 20px", marginTop: -36, position: "relative" }}>
+        <div style={{ maxWidth: 1200, marginInline: "auto", padding: "0 20px", position: "relative" }}>
           <div className="stats-strip" data-reveal="zoom">
             {([[s?.relations ?? 3, ["علاقات", "relationships"]], [s?.groups ?? 12, ["مجموعة للأسماء الحسنى", "groups of the Names"]], [s?.names ?? 106, ["معنى من الأسماء الحسنى", "meanings of the Beautiful Names"]],
               [s?.values ?? 209, ["قيمة بموازينها", "values with scales"]], [s?.behaviors ?? 3177, ["سلوكًا عمليًا", "practical behaviors"]]] as [number, Pair][]).map(([v, l]) => (
@@ -178,7 +219,7 @@ export default function Home() {
                   <span className="no">{L(["المستوى", "LEVEL"])} {n(lv.position)}</span>
                   <h3>{L(lv.t).replace(/^.*?:\s*/, "")}</h3>
                   <div className="row" style={{ gap: 6 }}><span className="pill acc">{n(lv.lessons)} {L(["درسًا", "lessons"])}</span><span className="pill">{n(lv.hours)} {L(["ساعة", "hours"])}</span></div>
-                  <ul>{lv.courses.map((c, k) => <li key={k}><Icon name="check" />{L(c).replace(/^.*?:\s*/, "")}</li>)}</ul>
+                  <ul>{lv.courses.map((c, k) => <li key={k}><Icon name="check" />{L([c[0], c[1]]).replace(/^.*?:\s*/, "")}</li>)}</ul>
                   {lv.project && <div className="proj"><b>{L(["مشروع المستوى", "Level project"])}</b>{L(lv.project)}</div>}
                 </div>
               ) : <div key={i} className="skel" style={{ height: 280 }} />)}

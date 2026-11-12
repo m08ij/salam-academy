@@ -4,7 +4,7 @@ import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { Checks, LevelTrack, ScoreCards } from "@/components/level";
 import { Guard } from "@/components/Shell";
-import { Alert, ConfirmButton, Field, Head, StatusPill, Tabs, useToast } from "@/components/ui";
+import { Alert, ConfirmButton, Field, Head, Stats, StatusPill, Tabs, useToast } from "@/components/ui";
 import { get, post } from "@/lib/api";
 import { date, num, useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
@@ -30,14 +30,16 @@ export default function TraineeFile() {
   if (error && !f) return <Alert>{error}</Alert>;
   if (!f) return <p className="muted">{t("loading")}</p>;
   const j = f.journey, st = j.stats, pj = j.project;
+  const sp = !!f.program.self_paced;
   const act = async (fn: () => Promise<any>, ok: string) => { setError(null); try { await fn(); toast(ok); await load(); } catch (x) { setError(err(x)); } };
   return (
     <Guard perm="train">
       <Head icon="trainer" eyebrow={`${L([f.program.title_ar, f.program.title_en])} · ${st.graduated ? t("graduated") : `${t("level")} ${num(st.level, lang)}`}`} title={f.user.name} sub={`${t("trainer")}: ${f.trainer || "—"}`} right={<Link className="btn" href="/trainer">{t("back")}</Link>} />
       {error && <Alert>{error}</Alert>}
-      <LevelTrack levels={f.program.levels} current={st.level} graduated={st.graduated} />
-      <Tabs<Tab> value={tab} onChange={setTab} tabs={[["over", t("criteria")], ["proj", t("project")], ["eval", t("evaluation")], ["shared", t("reflection")], ["hist", t("history")]]} />
-      {tab === "over" && <>
+      {!sp && <LevelTrack levels={f.program.levels} current={st.level} graduated={st.graduated} />}
+      <Tabs<Tab> value={tab} onChange={setTab} tabs={sp ? [["over", L(["التقدّم", "Progress"])], ["shared", t("reflection")], ["hist", t("history")]] : [["over", t("criteria")], ["proj", t("project")], ["eval", t("evaluation")], ["shared", t("reflection")], ["hist", t("history")]]} />
+      {tab === "over" && sp && <SelfPaced f={f} st={st} />}
+      {tab === "over" && !sp && <>
         <ScoreCards stats={st} />
         <div className="grid g2">
           <div className="card"><h3>{t("criteria")}</h3><Checks stats={st} /></div>
@@ -81,5 +83,42 @@ export default function TraineeFile() {
       </div>}
       {tab === "hist" && <div className="card">{j.promotions.length ? j.promotions.map((p: any, i: number) => <div key={i} className="row between"><span>{num(p.from, lang)} → {p.to ? num(p.to, lang) : t("graduated")} {p.override && <span className="pill warn">{t("override")}</span>}</span><span className="row"><span className="pill acc">{num(p.final, lang)}٪</span><span className="tiny faint">{date(p.at, lang)}</span></span></div>) : <p className="muted">—</p>}</div>}
     </Guard>
+  );
+}
+
+/** Self-paced course: what the learner has done, where they stand, and where they may need help. */
+function SelfPaced({ f, st }: { f: any; st: any }) {
+  const { t, L, lang } = useI18n();
+  const lessons = f.lessons as any[];
+  const sections = lessons.filter((l) => !l.questions || l.questions <= 10);
+  const exam = lessons.find((l) => l.questions > 10);
+  const done = sections.filter((l) => l.done_at).length;
+  const pct = sections.length ? Math.round((100 * done) / sections.length) : 0;
+  const examPct = exam?.best ? Math.round((100 * exam.best[0]) / exam.best[1]) : null;
+  const last = lessons.map((l) => l.done_at).filter(Boolean).sort().pop();
+  const next = sections.find((l) => !l.done_at);
+  return (
+    <>
+      <Stats items={[
+        { icon: "book", value: `${num(done, lang)}/${num(sections.length, lang)}`, label: L(["الأقسام المكتملة", "Sections completed"]), tone: "acc" },
+        { icon: "quiz", value: examPct ?? "—", suffix: examPct == null ? undefined : "٪", label: L(["أفضل نتيجة في الاختبار النهائي", "Best final-exam score"]), tone: examPct != null && examPct >= 70 ? "ok" : "gold" },
+        { icon: "enroll", value: exam?.attempts ?? 0, label: L(["محاولات الاختبار", "Exam attempts"]), tone: (exam?.attempts ?? 0) >= 3 && (examPct ?? 0) < 70 ? "bad" : "info" },
+        { icon: "medal", value: st.graduated ? L(["أتمّ الدورة", "Completed"]) : `${num(pct, lang)}٪`, label: L(["الحالة", "Status"]), tone: st.graduated ? "ok" : "acc" },
+      ]} />
+      <div className="card">
+        <div className="row between"><h3>{L(["أين يقف المتعلّم؟", "Where the learner stands"])}</h3><span className="tiny faint">{L(["آخر نشاط", "Last activity"])}: {date(last || null, lang)}</span></div>
+        <div className="bar"><i style={{ width: `${pct}%` }} /></div>
+        <p className="small muted">{st.graduated ? L(["أتمّ الدورة واجتاز الاختبار النهائي. يُكمَل التقدّم تلقائيًا في هذه الدورة الذاتية.", "Completed the course and passed the final exam. Progress completes automatically in this self-paced course."])
+          : next ? L([`القسم التالي: ${next.title_ar}`, `Next section: ${next.title_en || next.title_ar}`]) : L(["أنهى الأقسام؛ بقي الاختبار النهائي (٧٠٪ للنجاح).", "All sections done; the final exam remains (70% to pass)."])}</p>
+        {(exam?.attempts ?? 0) >= 3 && (examPct ?? 0) < 70 && <div className="alert warn small">{L(["حاول الاختبار عدة مرات دون نجاح؛ قد يحتاج مساعدتك في المراجعة.", "Several exam attempts without passing — they may need your help reviewing."])}</div>}
+      </div>
+      <div className="tbl-wrap cards"><table><thead><tr><th>{t("lesson")}</th><th>{t("status")}</th><th>{t("completed")}</th><th>{t("quiz")}</th></tr></thead><tbody>
+        {lessons.map((l: any, i: number) => <tr key={l.id}>
+          <td className="lead"><b className="small">{num(i + 1, lang)}. {L([l.title_ar, l.title_en])}</b></td>
+          <td data-label={t("status")}>{l.done_at ? <span className="pill ok">✓ {L(["مكتمل", "Done"])}</span> : <span className="pill">{L(["لم يبدأ", "Not yet"])}</span>}</td>
+          <td data-label={t("completed")} className="small faint">{date(l.done_at, lang)}</td>
+          <td data-label={t("quiz")} className="num">{l.best ? `${num(l.best[0], lang)}/${num(l.best[1], lang)} · ${num(l.attempts, lang)}×` : "—"}</td>
+        </tr>)}</tbody></table></div>
+    </>
   );
 }

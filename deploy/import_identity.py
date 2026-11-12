@@ -22,6 +22,7 @@ SCRIPT = "سكريبت دورة هويتي وعلامتي الشخصية بدو�
 EXAM = "اختبار دورة الهوية.docx"
 BOOK = "كتاب هويتي المتكاملة وعلامتي الشخصية - ويب.pdf"
 DROP_COLORS = {"0070C0", "00B050"}  # editor/graphics instructions in the script (see the colour key at its top)
+RENAME = {1: "عن الدورة"}  # section 1 is the promo video ("الإعلان"); named for learners instead
 
 
 def _unescape(s):
@@ -103,7 +104,7 @@ def lessons(path):
             else:
                 blocks.append(t)
         flush()
-        result.append({"n": ls["n"], "title": ls["title"], "body": "\n\n".join(blocks)})
+        result.append({"n": ls["n"], "title": RENAME.get(ls["n"], ls["title"]), "body": "\n\n".join(blocks)})
     return result
 
 

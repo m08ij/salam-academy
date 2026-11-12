@@ -7,8 +7,9 @@ import { get } from "@/lib/api";
 import { date, num, useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import { pushWidget } from "@/lib/native";
+import CourseAssistant from "@/components/CourseAssistant";
 
-type En = { id: string; program: { title_ar: string; title_en: string }; level: number; levels: number; graduated: boolean; trainer: string | null };
+type En = { id: string; program: { slug?: string; title_ar: string; title_en: string }; level: number; levels: number; graduated: boolean; trainer: string | null };
 
 /** Circular progress; animates from empty on first paint. */
 function Ring({ pct, label }: { pct: number; label: string }) {
@@ -32,6 +33,7 @@ export default function Learn() {
   const [ann, setAnn] = useState<any[]>([]);
   useEffect(() => {
     get<En[]>("/learn/enrollments").then(async (r) => {
+      r.sort((a, b) => Number(b.program.slug === "identity") - Number(a.program.slug === "identity")); // the Identity course leads
       setEns(r);
       const trees = await Promise.all(r.map((e) => get(`/learn/enrollments/${e.id}`)));
       setTree(Object.fromEntries(trees.map((x) => [x.id, x])));
@@ -112,6 +114,7 @@ export default function Learn() {
           );
         })}
 
+      {ens?.some((e) => e.program.slug === "identity") && <CourseAssistant />}
       <div className="card">
         <div className="row between"><h3>{t("announcements")}</h3>{ann.length > 0 && <span className="pill acc">{num(ann.length, lang)}</span>}</div>
         {ann.length ? ann.map((a) => (

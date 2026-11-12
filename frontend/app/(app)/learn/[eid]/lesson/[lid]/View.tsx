@@ -7,6 +7,7 @@ import { get, post, put } from "@/lib/api";
 import { num, useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import LessonBody from "@/components/LessonBody";
+import CourseAssistant from "@/components/CourseAssistant";
 
 export default function LessonPage() {
   const { eid, lid } = useParams<{ eid: string; lid: string }>();
@@ -47,7 +48,7 @@ export default function LessonPage() {
             <div key={qi} className="stack pan">
               <b style={{ fontSize: ".95rem", color: "var(--ink)" }}>{num(qi + 1, lang)}. {L([q.q_ar, q.q_en])}</b>
               {q.options.map((o: [string, string], oi: number) => {
-                const cls = result ? (answers[qi] === oi ? (result.right[qi] ? "right" : "wrong") : "") : "";
+                const cls = result?.right ? (answers[qi] === oi ? (result.right[qi] ? "right" : "wrong") : "") : "";
                 return <button key={oi} type="button" className={`opt ${cls}`} aria-pressed={answers[qi] === oi} onClick={() => { if (result) return; const a = [...answers]; a[qi] = oi; setAnswers(a); }}>{L(o)}</button>;
               })}
             </div>
@@ -57,10 +58,12 @@ export default function LessonPage() {
               try { const r = await post(`/learn/enrollments/${eid}/lessons/${lid}/quiz`, { answers }); setResult(r); } catch (x) { setError(err(x)); }
             }}>{t("checkAnswers")}</button> : <button type="button" className="btn" onClick={() => { setResult(null); setAnswers(ls.questions.map(() => -1)); }}>↻</button>}
             {result && <span className={`pill ${result.passed ? "ok" : "warn"}`}>{num(result.score, lang)}/{num(result.total, lang)}</span>}
+            {result && !result.right && <span className="small muted">{result.passed ? L(["نجحت! اضغط «أكمل الدرس» لإتمام الدورة.", "Passed! Press “Complete” to finish the course."]) : L(["لم تصل إلى ٧٠٪ بعد. راجع الدروس (يمكنك سؤال المساعد) ثم أعد المحاولة.", "Not 70% yet. Review the lessons (you can ask the assistant), then try again."])}</span>}
             <span className="tiny faint">{t("needCorrect")} {num(ls.required_correct, lang)}</span>
           </div>
         </div>
       )}
+      {tree.program.slug === "identity" && <CourseAssistant context={L([ls.title_ar, ls.title_en])} />}
       <div className="card">
         <h3>{t("reflection")}</h3>
         <textarea className="inp" value={refl} maxLength={5000} placeholder={t("reflectionHint")} aria-label={t("reflection")} onChange={(e) => {
@@ -73,7 +76,10 @@ export default function LessonPage() {
         <div>{prev && <Link className="btn" href={`/learn/${eid}/lesson/${prev.id}`}>{t("prevLesson")}</Link>}</div>
         <div className="row">
           <button type="button" className="btn pri" disabled={!quizOk || ls.done} onClick={async () => {
-            try { await post(`/learn/enrollments/${eid}/lessons/${lid}/complete`); toast(t("completed") + " ✓"); if (next) router.push(`/learn/${eid}/lesson/${next.id}`); else router.push(`/learn/${eid}`); } catch (x) { setError(err(x)); }
+            try {
+              const r = await post(`/learn/enrollments/${eid}/lessons/${lid}/complete`);
+              if (r?.completed_course) { toast(L(["مبارك! أتممت الدورة 🎓", "Congratulations — you completed the course! 🎓"])); router.push("/learn"); return; }
+              toast(t("completed") + " ✓"); if (next) router.push(`/learn/${eid}/lesson/${next.id}`); else router.push(`/learn/${eid}`); } catch (x) { setError(err(x)); }
           }}>{ls.done ? t("completed") + " ✓" : t("complete")}</button>
           {next ? <Link className="btn" href={`/learn/${eid}/lesson/${next.id}`}>{t("nextLesson")}</Link> : <Link className="btn" href={`/learn/${eid}`}>{t("toJourney")}</Link>}
         </div>

@@ -54,7 +54,7 @@ def trainees(scope: str = Query(default="mine", pattern=r"^(mine|all|none|[0-9a-
         if en.user.status == "deleted":
             continue
         st = public(level_stats(ctx.db, en))
-        out.append({"enrollment_id": str(en.id), "user": {"id": str(en.user_id), "name": en.user.name}, "program": {"title_ar": en.program.title_ar, "title_en": en.program.title_en},
+        out.append({"enrollment_id": str(en.id), "user": {"id": str(en.user_id), "name": en.user.name}, "program": {"self_paced": en.program.self_paced, "title_ar": en.program.title_ar, "title_en": en.program.title_en},
                     "trainer": en.trainer.name if en.trainer else None, "stats": st, "last_login_at": en.user.last_login_at.isoformat() if en.user.last_login_at else None})
     return out
 
@@ -67,8 +67,9 @@ def trainee_file(eid: str, ctx: Ctx = Depends(require("train"))):
     lessons = level_lessons(lv)
     ids = [ls.id for ls in lessons]
     done = {p.lesson_id: p.completed_at for p in db.scalars(select(LessonProgress).where(LessonProgress.user_id == u.id, LessonProgress.lesson_id.in_(ids)))} if ids else {}
-    attempts = {}
+    attempts, tries = {}, {}
     for a in db.scalars(select(QuizAttempt).where(QuizAttempt.user_id == u.id, QuizAttempt.lesson_id.in_(ids))) if ids else []:
+        tries[a.lesson_id] = tries.get(a.lesson_id, 0) + 1
         cur = attempts.get(a.lesson_id)
         if not cur or a.score / a.total > cur[0] / cur[1]:
             attempts[a.lesson_id] = (a.score, a.total)
@@ -82,7 +83,8 @@ def trainee_file(eid: str, ctx: Ctx = Depends(require("train"))):
     return {"enrollment_id": str(en.id), "user": {"id": str(u.id), "name": u.name, "email": u.email}, "trainer": en.trainer.name if en.trainer else None,
             "program": {"title_ar": en.program.title_ar, "title_en": en.program.title_en, "levels": [{"position": x.position, "title_ar": x.title_ar, "title_en": x.title_en} for x in en.program.levels]},
             "journey": journey(db, en), "rubric": rubric(db),
-            "lessons": [{"id": str(ls.id), "title_ar": ls.title_ar, "title_en": ls.title_en, "done_at": done[ls.id].isoformat() if ls.id in done else None, "best": attempts.get(ls.id)} for ls in lessons],
+            "lessons": [{"id": str(ls.id), "title_ar": ls.title_ar, "title_en": ls.title_en, "done_at": done[ls.id].isoformat() if ls.id in done else None, "best": attempts.get(ls.id),
+                         "attempts": tries.get(ls.id, 0), "questions": len(ls.questions)} for ls in lessons],
             "shared": {"reflections": u.share_reflections, "plan": u.share_plan}, "reflections": refl, "plan": plan,
             "evaluations": [evaluation_out(e) | {"level": e.level_position} for e in evals]}
 

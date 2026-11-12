@@ -37,9 +37,10 @@ def overview(response: Response, db: DB = Depends(get_db)):
     groups = [{"id": g.id, "position": g.position, "t": [g.title_ar, g.title_en], "d": [g.desc_ar, g.desc_en], "color": g.color, "skills": g.skills,
                "names": [[n.title_ar, n.title_en] for n in names if n.group_id == g.id]}
               for g in db.scalars(select(CatGroup).order_by(CatGroup.position))]
-    academy = [{"slug": p.slug, "t": [p.title_ar, p.title_en], "d": [p.desc_ar, p.desc_en],
+    academy = [{"slug": p.slug, "self_paced": p.self_paced, "t": [p.title_ar, p.title_en], "d": [p.desc_ar, p.desc_en],
                 "levels": [{"position": lv.position, "t": [lv.title_ar, lv.title_en], "d": [lv.desc_ar, lv.desc_en],
-                            "courses": [[c.title_ar, c.title_en] for c in lv.courses],
+                            # [title_ar, title_en, lesson count, lesson titles] — titles only, never lesson bodies or questions
+                            "courses": [[c.title_ar, c.title_en, len(c.lessons), [[ls.title_ar, ls.title_en] for ls in c.lessons]] for c in lv.courses],
                             "lessons": sum(len(c.lessons) for c in lv.courses), "hours": sum(ls.hours for c in lv.courses for ls in c.lessons),
                             "project": [lv.project_title_ar, lv.project_title_en] if lv.project_required else None} for lv in p.levels]}
                for p in db.scalars(select(Program).where(Program.active.is_(True)).order_by(Program.slug))]

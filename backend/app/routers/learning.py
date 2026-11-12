@@ -91,7 +91,7 @@ def gated_lesson(en: Enrollment, lid: str) -> Lesson:
 def my_enrollments(ctx: Ctx = Depends(current)):
     out = []
     for en in ctx.db.scalars(select(Enrollment).where(Enrollment.user_id == ctx.user.id)):
-        out.append({"id": str(en.id), "program": {"id": str(en.program_id), "title_ar": en.program.title_ar, "title_en": en.program.title_en},
+        out.append({"id": str(en.id), "program": {"id": str(en.program_id), "slug": en.program.slug, "self_paced": en.program.self_paced, "title_ar": en.program.title_ar, "title_en": en.program.title_en},
                     "level": en.level_position, "levels": len(en.program.levels), "graduated": en.graduated_at is not None,
                     "trainer": en.trainer.name if en.trainer else None})
     return out
@@ -128,7 +128,7 @@ def enrollment_tree(eid: str, ctx: Ctx = Depends(current)):
                            {"id": str(ls.id), "title_ar": ls.title_ar, "title_en": ls.title_en, "hours": ls.hours, "done": ls.id in done,
                             "has_quiz": bool(ls.questions), "best": ({"score": best[ls.id].score, "total": best[ls.id].total} if ls.id in best else None)}
                            for ls in c.lessons]} for c in lv.courses]})
-    return {"id": str(en.id), "program": {"id": str(p.id), "title_ar": p.title_ar, "title_en": p.title_en}, "trainer": en.trainer.name if en.trainer else None,
+    return {"id": str(en.id), "program": {"id": str(p.id), "slug": p.slug, "self_paced": p.self_paced, "title_ar": p.title_ar, "title_en": p.title_en}, "trainer": en.trainer.name if en.trainer else None,
             "levels": levels, "stats": public(level_stats(ctx.db, en))}
 
 
