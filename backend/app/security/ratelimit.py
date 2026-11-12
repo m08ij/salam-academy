@@ -22,3 +22,8 @@ def hit(db: Session, key: str, limit: int, window_s: int) -> None:
 def prune(db: Session, older_than_s: int = 86400) -> None:
     db.execute(delete(RateEvent).where(RateEvent.ts < utcnow() - timedelta(seconds=older_than_s)))
     db.commit()
+
+
+def count(db: Session, key: str, window_s: int) -> int:
+    since = utcnow() - timedelta(seconds=window_s)
+    return db.scalar(select(func.count()).select_from(RateEvent).where(RateEvent.key == key, RateEvent.ts > since)) or 0

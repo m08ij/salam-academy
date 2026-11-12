@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from .config import get_settings
-from .routers import account, admin, auth, catalog, learning, programs, public, training, users
+from .routers import account, admin, assistant, auth, catalog, content, learning, programs, public, training, users
 
 log = logging.getLogger("salam")
 MAX_BODY = 1_000_000
@@ -30,7 +30,8 @@ class Guard(BaseHTTPMiddleware):
             origin = request.headers.get("origin") or (_origin(request.headers["referer"]) if request.headers.get("referer") else None)
             if origin != allowed:
                 return JSONResponse({"detail": {"code": "bad_origin"}}, status_code=403)
-            if int(request.headers.get("content-length") or 0) > MAX_BODY:
+            limit = 4 * 1024 * 1024 if request.url.path == "/api/admin/content/identity" else MAX_BODY  # course bundle (staff only)
+            if int(request.headers.get("content-length") or 0) > limit:
                 return JSONResponse({"detail": {"code": "payload_too_large"}}, status_code=413)
         resp = await call_next(request)
         resp.headers.setdefault("Cache-Control", "no-store")
@@ -49,7 +50,7 @@ def create_app() -> FastAPI:
     docs = s.environment == "development"
     app = FastAPI(title="Salam Academy API", version="1.0.0", docs_url="/api/docs" if docs else None, redoc_url=None, openapi_url="/api/openapi.json" if docs else None)
     app.add_middleware(Guard)
-    for r in (auth, account, users, programs, learning, training, admin, catalog, public):
+    for r in (auth, account, users, programs, learning, training, admin, catalog, public, content, assistant):
         app.include_router(r.router)
 
     @app.get("/api/health")

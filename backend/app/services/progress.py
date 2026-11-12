@@ -11,7 +11,9 @@ def level_lessons(level: Level) -> list[Lesson]:
 
 
 def required_correct(lesson: Lesson) -> int:
-    return min(3, len(lesson.questions))
+    n = len(lesson.questions)
+    # Short lesson checks: 3 right (or all if fewer). Long final exams: 70%.
+    return -(-n * 7 // 10) if n > 10 else min(3, n)
 
 
 def best_attempts(db: Session, user_id, lesson_ids) -> dict:
@@ -66,7 +68,9 @@ def level_stats(db: Session, en: Enrollment, pos: int | None = None) -> dict:
     comp = []
     if has_quiz:
         comp.append((lv.w_quiz, quiz or 0))
-    comp.append((lv.w_eval, (eval_avg or 0) / 5 * 100))
+    needs_eval = lv.w_eval > 0  # self-paced levels have no trainer evaluation
+    if needs_eval:
+        comp.append((lv.w_eval, (eval_avg or 0) / 5 * 100))
     if lv.project_required:
         comp.append((lv.w_project, proj or 0))
     tw = sum(w for w, _ in comp)
@@ -74,11 +78,15 @@ def level_stats(db: Session, en: Enrollment, pos: int | None = None) -> dict:
     checks = [{"key": "lessons", "ok": bool(lessons) and len(done) == len(lessons), "value": f"{len(done)}/{len(lessons)}"}]
     if has_quiz:
         checks.append({"key": "quiz", "ok": quiz is not None and quiz >= lv.min_quiz, "value": quiz, "required": lv.min_quiz})
-    checks.append({"key": "eval", "ok": eval_avg is not None and eval_avg >= lv.min_eval, "value": eval_avg, "required": lv.min_eval})
+    if needs_eval:
+        checks.append({"key": "eval", "ok": eval_avg is not None and eval_avg >= lv.min_eval, "value": eval_avg, "required": lv.min_eval})
     if lv.project_required:
         checks.append({"key": "project", "ok": pstat == "approved" and proj is not None and proj >= lv.min_project, "value": proj, "status": pstat, "required": lv.min_project})
     checks.append({"key": "final", "ok": final >= lv.min_final, "value": final, "required": lv.min_final})
-    complete = eval_avg is not None and (not lv.project_required or proj is not None)
+    if needs_eval:
+        complete = eval_avg is not None and (not lv.project_required or proj is not None)  # unchanged rule for trainer-led levels
+    else:
+        complete = (not lv.project_required or proj is not None) and (not has_quiz or quiz is not None)
     return {
         "level": pos, "levels": len(levels), "level_title": [lv.title_ar, lv.title_en], "graduated": en.graduated_at is not None,
         "lessons_total": len(lessons), "lessons_done": len(done), "quiz": quiz, "eval": eval_avg, "project": proj, "project_status": pstat,

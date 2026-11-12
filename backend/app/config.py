@@ -1,7 +1,7 @@
 """Runtime configuration. Every secret comes from the environment; nothing sensitive is hard-coded."""
 from functools import lru_cache
 
-from pydantic import Field, field_validator
+from pydantic import AliasChoices, Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -33,6 +33,15 @@ class Settings(BaseSettings):
     owner_password: str = ""
     # Trial only: "email|name|role|password;..." accounts created at start-up if missing (ready to sign in).
     trial_users: str = ""
+
+    # Course assistant (OpenAI-compatible chat API; OpenRouter by default). The key never leaves the server.
+    ai_api_key: str = Field(default="", validation_alias=AliasChoices("SALAM_AI_API_KEY", "OPENROUTER_API_KEY"))
+    ai_base_url: str = "https://openrouter.ai/api/v1"
+    ai_model: str = "baidu/ernie-5.5-flash-preview:free"
+    ai_fallback_models: str = ""  # comma-separated, tried in order when the primary model fails
+    ai_enabled_for_learners: bool = False  # staff can always test (when a key is set); learners only once this is true
+    ai_daily_limit: int = 20  # questions per person per day
+    ai_timeout_seconds: int = 45
 
     login_max_failures: int = 5
     lockout_minutes: int = 15

@@ -113,6 +113,8 @@ class Program(Base):
     desc_en: Mapped[str] = mapped_column(Text, default="")
     active: Mapped[bool] = mapped_column(Boolean, default=False)
     self_enroll: Mapped[bool] = mapped_column(Boolean, default=False)
+    # Self-paced: no trainer evaluation or project; the learner completes the course automatically when the criteria are met.
+    self_paced: Mapped[bool] = mapped_column(Boolean, default=False, server_default="0")
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, onupdate=utcnow)
     levels: Mapped[list["Level"]] = relationship(order_by="Level.position", cascade="all, delete-orphan", back_populates="program")
 
@@ -339,3 +341,15 @@ class CatBehavior(Base):
     text_ar: Mapped[str] = mapped_column(Text)
     text_en: Mapped[str] = mapped_column(Text, default="")
     unofficial_en: Mapped[bool] = mapped_column(Boolean, default=False)
+
+
+# ---------------- course knowledge for the assistant ----------------
+class KnowledgeChunk(Base):
+    """Passages the assistant may answer from (lesson sections and book pages). Loaded by the content import, never by learners."""
+    __tablename__ = "knowledge_chunks"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    program_slug: Mapped[str] = mapped_column(String(64), index=True)
+    source: Mapped[str] = mapped_column(String(16))  # lesson | book
+    ref: Mapped[str] = mapped_column(String(32))  # lesson number or book page
+    title: Mapped[str] = mapped_column(String(300), default="")
+    text: Mapped[str] = mapped_column(Text)

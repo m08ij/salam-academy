@@ -26,7 +26,7 @@ def test_overview_hides_inactive_programs(db):
     p.active = False
     db.commit()
     try:
-        assert Api().get("/api/public/overview").json()["academy"] == []
+        assert "best-version" not in [x["slug"] for x in Api().get("/api/public/overview").json()["academy"]]
     finally:
         p.active = True
         db.commit()

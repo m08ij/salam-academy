@@ -21,7 +21,7 @@ class EnrollIn(BaseModel):
 
 
 class AnswersIn(BaseModel):
-    answers: list[int] = Field(max_length=20)
+    answers: list[int] = Field(max_length=60)
 
 
 class ReflectionIn(BaseModel):
@@ -39,6 +39,25 @@ class ProjectIn(BaseModel):
         if v and not re.match(r"^https://[^\s<>\"']+$", v):
             raise ValueError("link must be an https URL")
         return v
+
+
+def self_paced_check(ctx: Ctx, en: Enrollment, request: Request | None = None) -> bool:
+    """Self-paced courses complete themselves: once every criterion is met, the learner advances (or graduates) without a trainer step."""
+    if not en.program.self_paced or en.graduated_at:
+        return False
+    st = level_stats(ctx.db, en)
+    if not st["eligible"]:
+        return False
+    last = en.level_position >= len(en.program.levels)
+    ctx.db.add(Promotion(enrollment_id=en.id, from_level=en.level_position, to_level=None if last else en.level_position + 1, final=st["final"],
+                         approved_by=None, override=False, reason="self-paced completion"))
+    if last:
+        en.graduated_at = utcnow()
+    else:
+        en.level_position += 1
+    audit.log(ctx.db, "self_paced_completed" if last else "self_paced_advanced", ctx.user, request, "enrollment", en.id, final=st["final"])
+    ctx.db.commit()
+    return True
 
 
 def my_enrollment(ctx: Ctx, eid: str) -> Enrollment:
@@ -139,7 +158,11 @@ def submit_quiz(eid: str, lid: str, body: AnswersIn, request: Request, ctx: Ctx 
     score = sum(right)
     ctx.db.add(QuizAttempt(user_id=ctx.user.id, lesson_id=ls.id, score=score, total=len(ls.questions)))
     ctx.db.commit()
-    return {"score": score, "total": len(ls.questions), "passed": score >= required_correct(ls), "right": right}
+    # Long final exams show only the score: per-question right/wrong would hand out the answer key for the next attempt.
+    reveal = len(ls.questions) <= 10
+    if ctx.db.get(LessonProgress, (ctx.user.id, ls.id)):
+        self_paced_check(ctx, en, request)  # a better retake can complete the course
+    return {"score": score, "total": len(ls.questions), "passed": score >= required_correct(ls), "right": right if reveal else None}
 
 
 @router.post("/enrollments/{eid}/lessons/{lid}/complete")
@@ -153,7 +176,7 @@ def complete(eid: str, lid: str, ctx: Ctx = Depends(current)):
     if not ctx.db.get(LessonProgress, (ctx.user.id, ls.id)):
         ctx.db.add(LessonProgress(user_id=ctx.user.id, lesson_id=ls.id))
         ctx.db.commit()
-    return {"ok": True}
+    return {"ok": True, "completed_course": self_paced_check(ctx, en) and en.graduated_at is not None}
 
 
 @router.put("/enrollments/{eid}/lessons/{lid}/reflection")
