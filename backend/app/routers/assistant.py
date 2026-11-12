@@ -45,7 +45,7 @@ def ask(body: AskIn, request: Request, ctx: Ctx = Depends(current)):
     if not who:
         raise HTTPException(status_code=403, detail={"code": "assistant_unavailable"})
     ratelimit.hit(ctx.db, f"ai:{ctx.user.id}", s.ai_daily_limit, 86400)
-    hits = knowledge.search(ctx.db, SLUG, body.question, k=6)
+    hits = knowledge.search(ctx.db, SLUG, body.question, k=8)
     sources = [{"source": r.source, "ref": r.ref, "title": r.title, "label": assistant.label(r.source, r.ref, body.lang)} for _, r in hits]
     # de-duplicate citations (several passages can come from the same lesson/page)
     seen, uniq = set(), []

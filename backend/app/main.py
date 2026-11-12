@@ -10,6 +10,11 @@ from .config import get_settings
 from .routers import account, admin, assistant, auth, catalog, content, learning, programs, public, training, users
 
 log = logging.getLogger("salam")
+if not log.handlers:  # make the app's own warnings visible in the host's logs (uvicorn only configures its own loggers)
+    _h = logging.StreamHandler()
+    _h.setFormatter(logging.Formatter("%(levelname)s %(name)s: %(message)s"))
+    log.addHandler(_h)
+    log.setLevel(logging.INFO)
 MAX_BODY = 1_000_000
 UNSAFE = {"POST", "PUT", "PATCH", "DELETE"}
 

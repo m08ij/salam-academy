@@ -5,6 +5,7 @@ callers get the most relevant passages instead of an answer, so the learner is n
 """
 import logging
 import re
+import time
 
 import httpx
 
@@ -49,29 +50,41 @@ def build_messages(question: str, passages: list[tuple[str, str, str, str]], lan
     return [{"role": "system", "content": SYSTEM[lang]}, {"role": "user", "content": user}]
 
 
+def _call(model: str, messages: list[dict]) -> httpx.Response:
+    s = get_settings()
+    headers = {"Authorization": f"Bearer {s.ai_api_key}", "Content-Type": "application/json",
+               "HTTP-Referer": s.app_url, "X-Title": "Salam Academy"}
+    body = {"model": model, "messages": messages, "temperature": 0.2, "max_tokens": 2500,
+            # Reasoning models spend tokens "thinking" first; keep that short and out of the answer.
+            "reasoning": {"effort": "low", "exclude": True}}
+    return httpx.post(f"{s.ai_base_url.rstrip('/')}/chat/completions", headers=headers, timeout=s.ai_timeout_seconds, json=body)
+
+
 def complete(messages: list[dict]) -> str:
     """Calls the configured provider; tries fallback models in order. Raises ProviderError when all fail."""
     s = get_settings()
     if not s.ai_api_key:
         raise ProviderError("no_key")
     models = [s.ai_model] + [m.strip() for m in s.ai_fallback_models.split(",") if m.strip()]
-    headers = {"Authorization": f"Bearer {s.ai_api_key}", "Content-Type": "application/json",
-               "HTTP-Referer": s.app_url, "X-Title": "Salam Academy"}
     last = "unknown"
     for model in models:
         try:
-            r = httpx.post(f"{s.ai_base_url.rstrip('/')}/chat/completions", headers=headers, timeout=s.ai_timeout_seconds,
-                           json={"model": model, "messages": messages, "temperature": 0.2, "max_tokens": 900})
+            r = _call(model, messages)
+            if r.status_code == 429:  # free models are rate-limited per minute: one short retry
+                time.sleep(2)
+                r = _call(model, messages)
             if r.status_code != 200:
                 last = f"http_{r.status_code}"
-                log.warning("assistant provider %s returned %s", model, r.status_code)  # body may echo input; not logged
+                log.warning("assistant provider %s returned %s", model, r.status_code)  # body may echo the question; not logged
                 continue
-            text = (r.json().get("choices") or [{}])[0].get("message", {}).get("content") or ""
-            text = re.sub(r"<think>.*?</think>", "", text, flags=re.S).strip()  # some models emit reasoning blocks
+            msg = (r.json().get("choices") or [{}])[0].get("message") or {}
+            text = re.sub(r"<think>.*?</think>", "", msg.get("content") or "", flags=re.S).strip()
             if text:
                 return text
             last = "empty"
-        except (httpx.HTTPError, ValueError, KeyError, IndexError) as e:
+            log.warning("assistant provider %s returned an empty answer (finish_reason=%s)", model,
+                        ((r.json().get("choices") or [{}])[0]).get("finish_reason"))
+        except (httpx.HTTPError, ValueError, KeyError, IndexError, AttributeError) as e:
             last = type(e).__name__
             log.warning("assistant provider %s failed: %s", model, last)
     raise ProviderError(last)

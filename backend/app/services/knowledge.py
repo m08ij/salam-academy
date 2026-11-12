@@ -86,7 +86,8 @@ def chunk_pages(pages: list[tuple[int, str]]) -> list[tuple[str, int, str, str]]
 class _Index:
     def __init__(self, rows: list[KnowledgeChunk]):
         self.rows = rows
-        self.docs = [Counter(tokens(f"{r.title} {r.text}")) for r in rows]
+        # Section titles say what a passage is about: their words count three times.
+        self.docs = [Counter(tokens(r.text) + tokens(r.title) * 3) for r in rows]
         self.lens = [sum(d.values()) for d in self.docs]
         self.avg = (sum(self.lens) / len(self.lens)) if self.lens else 1
         df: Counter = Counter()
@@ -109,7 +110,16 @@ class _Index:
             if s > 0:
                 scored.append((s, self.rows[i]))
         scored.sort(key=lambda x: -x[0])
-        return scored[:k]
+        # Variety: at most two passages from the same lesson/page, so one long section cannot crowd out the rest.
+        out, per = [], Counter()
+        for sc, r in scored:
+            key = (r.source, r.ref)
+            if per[key] < 2:
+                per[key] += 1
+                out.append((sc, r))
+            if len(out) == k:
+                break
+        return out
 
 
 _cache: dict[str, _Index] = {}
