@@ -53,11 +53,20 @@ def glossary(ctx: Ctx = Depends(current)):
 class GenIn(BaseModel):
     kind: str = Field(pattern="^(quizzes|glossary)$")
     limit: int = Field(default=3, ge=1, le=6)
+    reset: bool = False  # glossary: start over (e.g. to regenerate shorter definitions)
 
 
 def _json(text: str):
     m = re.search(r"(\[.*\]|\{.*\})", text, re.S)
     return json.loads(m.group(1)) if m else None
+
+
+def _short(d: str, words: int = 30) -> str:
+    """Keeps a definition to its first sentence (or ~30 words) so the glossary stays scannable."""
+    d = re.sub(r"\[[^\]]*\]", "", d).replace("**", "").strip()
+    first = re.split(r"(?<=[.!؟?])\s", d)[0]
+    w = first.split()
+    return " ".join(w[:words]) + ("…" if len(w) > words else "")
 
 
 @router.post("/admin/content/identity/generate")
@@ -89,7 +98,7 @@ def generate(body: GenIn, request: Request, ctx: Ctx = Depends(require("programs
              "الذكاء العاطفي", "الوعي بالذات", "إدارة الذات", "التقييم 360", "لوحة الرؤية", "ثبات الهوية"]
     from ..services import knowledge
     s = db.get(Setting, f"glossary:{SLUG}")
-    out = list(s.value.get("terms", [])) if s else []
+    out = list(s.value.get("terms", [])) if s and not body.reset else []
     have = {x["term"] for x in out}
     for t in [t for t in terms if t not in have][: body.limit]:
         hits = knowledge.search(db, SLUG, f"ما هو {t} تعريف معنى", k=3)
@@ -97,11 +106,11 @@ def generate(body: GenIn, request: Request, ctx: Ctx = Depends(require("programs
             continue
         ctxt = "\n".join(f"[{assistant.label(r.source, r.ref, 'ar')}] {r.text[:700]}" for _, r in hits)
         try:
-            d = assistant.complete([{"role": "system", "content": "عرّف المصطلح كما تشرحه المقتطفات فقط، في جملتين بالعربية. لا تضف معلومات من خارجها."},
+            d = assistant.complete([{"role": "system", "content": "عرّف المصطلح كما تشرحه المقتطفات فقط، في جملة واحدة قصيرة لا تتجاوز ٢٥ كلمة، بالعربية، بدون مقدمات ولا ذكر للمصادر. لا تضف معلومات من خارجها."},
                                     {"role": "user", "content": f"المقتطفات:\n{ctxt}\n\nالمصطلح: {t}"}])
         except assistant.ProviderError:
             continue
-        out.append({"term": t, "def": d.strip()[:600], "ref": assistant.label(hits[0][1].source, hits[0][1].ref, "ar")})
+        out.append({"term": t, "def": _short(d), "ref": assistant.label(hits[0][1].source, hits[0][1].ref, "ar")})
     if s:
         s.value = {"terms": out}
     else:
