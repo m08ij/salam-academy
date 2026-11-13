@@ -4,7 +4,7 @@ import { useI18n } from "@/lib/i18n";
 
 /** Interactive worksheets for the practical sections (360 feedback, vision board). Saved inside the section's reflection. */
 const KINDS: { match: RegExp; key: string; title: [string, string]; fields: [string, string][] }[] = [
-  { match: /360/, key: "360", title: ["تمرين التقييم 360", "360° feedback exercise"],
+  { match: /360|من أنت/, key: "360", title: ["تمرين التقييم 360", "360° feedback exercise"],
     fields: [["كيف أرى نفسي؟", "How do I see myself?"], ["كيف تراني أسرتي؟", "How does my family see me?"], ["كيف يراني زملائي أو أصدقائي؟", "How do colleagues/friends see me?"],
       ["نقاط القوة المشتركة", "Shared strengths"], ["فجوة أريد العمل عليها", "A gap I want to work on"]] },
   { match: /الرؤية|رؤية/, key: "vision", title: ["لوحة رؤيتي", "My vision board"],

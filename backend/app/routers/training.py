@@ -119,7 +119,7 @@ def trainee_file(eid: str, ctx: Ctx = Depends(require("train"))):
     plan = (db.get(GrowthPlan, u.id).data if db.get(GrowthPlan, u.id) else None) if u.share_plan else None
     evals = db.scalars(select(Evaluation).where(Evaluation.enrollment_id == en.id).order_by(Evaluation.created_at.desc())).all()
     return {"enrollment_id": str(en.id), "user": {"id": str(u.id), "name": u.name, "email": u.email}, "trainer": en.trainer.name if en.trainer else None,
-            "program": {"title_ar": en.program.title_ar, "title_en": en.program.title_en, "levels": [{"position": x.position, "title_ar": x.title_ar, "title_en": x.title_en} for x in en.program.levels]},
+            "program": {"self_paced": en.program.self_paced, "title_ar": en.program.title_ar, "title_en": en.program.title_en, "levels": [{"position": x.position, "title_ar": x.title_ar, "title_en": x.title_en} for x in en.program.levels]},
             "journey": journey(db, en), "rubric": rubric(db),
             "lessons": [{"id": str(ls.id), "title_ar": ls.title_ar, "title_en": ls.title_en, "done_at": done[ls.id].isoformat() if ls.id in done else None, "best": attempts.get(ls.id), "notes": notes.get(ls.id, []),
                          "attempts": tries.get(ls.id, 0), "questions": len(ls.questions)} for ls in lessons],
