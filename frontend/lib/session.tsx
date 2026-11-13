@@ -12,7 +12,7 @@ export type Me = {
 
 const Ctx = createContext<{ me: Me | null; loading: boolean; refresh: () => Promise<Me | null>; logout: () => Promise<void>; can: (p: string) => boolean }>(null as any);
 
-const PUBLIC = ["/login", "/forgot", "/reset", "/accept-invite", "/verify", "/mfa"];
+const PUBLIC = ["/login", "/forgot", "/reset", "/accept-invite", "/verify", "/mfa", "/preview"];
 
 export function homeFor(me: Me): string {
   if (!me.mfa_passed && !me.mfa_setup_required) return "/mfa";
