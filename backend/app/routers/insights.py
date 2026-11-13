@@ -88,8 +88,10 @@ def generate(body: GenIn, request: Request, ctx: Ctx = Depends(require("programs
     terms = ["الهوية", "العلامة الشخصية", "منظومة الهوية", "القناعة", "الإيمان", "الإيمان بالغيب", "منظومة القيم", "القيم الحاكمة", "ملامح الهوية",
              "الذكاء العاطفي", "الوعي بالذات", "إدارة الذات", "التقييم 360", "لوحة الرؤية", "ثبات الهوية"]
     from ..services import knowledge
-    out = []
-    for t in terms:
+    s = db.get(Setting, f"glossary:{SLUG}")
+    out = list(s.value.get("terms", [])) if s else []
+    have = {x["term"] for x in out}
+    for t in [t for t in terms if t not in have][: body.limit]:
         hits = knowledge.search(db, SLUG, f"ما هو {t} تعريف معنى", k=3)
         if not hits:
             continue
@@ -100,9 +102,10 @@ def generate(body: GenIn, request: Request, ctx: Ctx = Depends(require("programs
         except assistant.ProviderError:
             continue
         out.append({"term": t, "def": d.strip()[:600], "ref": assistant.label(hits[0][1].source, hits[0][1].ref, "ar")})
-    s = db.get(Setting, f"glossary:{SLUG}") or Setting(key=f"glossary:{SLUG}", value={})
-    s.value = {"terms": out}
-    db.merge(s)
+    if s:
+        s.value = {"terms": out}
+    else:
+        db.add(Setting(key=f"glossary:{SLUG}", value={"terms": out}))
     audit.log(db, "glossary_generated", ctx.user, request, "program", p.id, terms=len(out))
     db.commit()
-    return {"generated": len(out), "remaining": 0}
+    return {"generated": len(out), "remaining": len([t for t in terms if t not in {x["term"] for x in out}])}
