@@ -15,7 +15,7 @@ export default function Trainer() {
   const { t, L, lang } = useI18n();
   const { can } = useSession();
   const router = useRouter();
-  const [scope, setScope] = useState("mine");
+  const [scope, setScope] = useState(() => (can("train_all") ? "all" : "mine"));
   const [rows, setRows] = useState<any[] | null>(null);
   const [trainers, setTrainers] = useState<any[]>([]);
   const [q, setQ] = useState("");
