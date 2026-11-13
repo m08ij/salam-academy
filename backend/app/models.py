@@ -353,3 +353,14 @@ class KnowledgeChunk(Base):
     ref: Mapped[str] = mapped_column(String(32))  # lesson number or book page
     title: Mapped[str] = mapped_column(String(300), default="")
     text: Mapped[str] = mapped_column(Text)
+
+
+class LessonComment(Base):
+    """A trainer's short note to one learner on one section."""
+    __tablename__ = "lesson_comments"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    enrollment_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("enrollments.id", ondelete="CASCADE"), index=True)
+    lesson_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("lessons.id", ondelete="CASCADE"), index=True)
+    author_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
+    text: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)

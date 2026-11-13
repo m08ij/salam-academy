@@ -18,6 +18,43 @@ function pages(text: string, budget = 220): string[] {
   return out.filter((p) => p.length).map((p) => p.join("\n\n"));
 }
 
+/** Reads text aloud with the best available voice for the page language (Arabic neural voices first), sentence by sentence. */
+function Listen({ text }: { text: string }) {
+  const { L, lang } = useI18n();
+  const [on, setOn] = useState(false);
+  const [rate, setRate] = useState(0.95);
+  const [ok, setOk] = useState(false);
+  useEffect(() => { setOk(typeof window !== "undefined" && "speechSynthesis" in window); return () => { try { speechSynthesis.cancel(); } catch {} }; }, []);
+  useEffect(() => { if (on) { speechSynthesis.cancel(); setOn(false); } }, [text]); // eslint-disable-line react-hooks/exhaustive-deps
+  if (!ok) return null;
+  const voice = () => {
+    const vs = speechSynthesis.getVoices().filter((v) => v.lang.toLowerCase().startsWith(lang));
+    const score = (v: SpeechSynthesisVoice) => (/natural|neural|online|premium|enhanced/i.test(v.name) ? 4 : 0) + (/google|microsoft/i.test(v.name) ? 2 : 0) + (/sa|eg|ae/i.test(v.lang) ? 1 : 0);
+    return vs.sort((a, b) => score(b) - score(a))[0];
+  };
+  const play = () => {
+    speechSynthesis.cancel();
+    const clean = text.replace(/[#*_>|]/g, " ").replace(/^\s*[-•]\s+/gm, "");
+    const parts = clean.split(/(?<=[.!؟?،:\n])\s+/).map((s) => s.trim()).filter((s) => s.length > 1);
+    const v = voice();
+    parts.forEach((p, k) => {
+      const u = new SpeechSynthesisUtterance(p);
+      u.lang = v?.lang || (lang === "ar" ? "ar-SA" : "en-US"); if (v) u.voice = v; u.rate = rate;
+      if (k === parts.length - 1) u.onend = () => setOn(false);
+      speechSynthesis.speak(u);
+    });
+    setOn(true);
+  };
+  return (
+    <span className="listen">
+      <button type="button" className={`btn sm ${on ? "pri" : "ghost"}`} onClick={() => (on ? (speechSynthesis.cancel(), setOn(false)) : play())}>{on ? "■ " + L(["إيقاف", "Stop"]) : "🔊 " + L(["استمع", "Listen"])}</button>
+      <select className="inp sm" value={rate} aria-label={L(["سرعة القراءة", "Speed"])} onChange={(e) => setRate(Number(e.target.value))}>
+        {[0.8, 0.95, 1.1, 1.25].map((r) => <option key={r} value={r}>{r}×</option>)}
+      </select>
+    </span>
+  );
+}
+
 export default function Reader({ text, title, onFinished }: { text: string; title: string; onFinished?: () => void }) {
   const { L, lang } = useI18n();
   const list = useMemo(() => pages(text), [text]);
@@ -49,6 +86,7 @@ export default function Reader({ text, title, onFinished }: { text: string; titl
     <div className="reader" ref={top}>
       <div className="reader-top">
         <span className="tiny faint">{all ? L(["الدرس كاملًا", "Full lesson"]) : L([`صفحة ${num(i + 1, lang)} من ${num(list.length, lang)}`, `Page ${i + 1} of ${list.length}`])}</span>
+        <Listen text={all ? text : list[i]} />
         <button type="button" className="btn ghost sm" onClick={() => { setAll((v) => !v); onFinished?.(); }}>{all ? L(["عرض صفحة صفحة", "Page by page"]) : L(["عرض الدرس كاملًا", "Show full lesson"])}</button>
       </div>
       {!all && <div className="reader-bar" aria-hidden><i style={{ width: `${((i + 1) / list.length) * 100}%` }} /></div>}

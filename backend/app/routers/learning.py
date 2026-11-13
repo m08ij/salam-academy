@@ -41,6 +41,18 @@ class ProjectIn(BaseModel):
         return v
 
 
+def last_activity(db, en: Enrollment) -> str | None:
+    """Most recent lesson completion or quiz attempt in this enrollment (ISO), for reminders and alerts."""
+    from sqlalchemy import func
+    ids = [ls.id for lv in en.program.levels for ls in level_lessons(lv)]
+    if not ids:
+        return None
+    a = db.scalar(select(func.max(LessonProgress.completed_at)).where(LessonProgress.user_id == en.user_id, LessonProgress.lesson_id.in_(ids)))
+    b = db.scalar(select(func.max(QuizAttempt.created_at)).where(QuizAttempt.user_id == en.user_id, QuizAttempt.lesson_id.in_(ids)))
+    m = max([x for x in (a, b, en.created_at) if x])
+    return m.isoformat()
+
+
 def self_paced_check(ctx: Ctx, en: Enrollment, request: Request | None = None) -> bool:
     """Self-paced courses complete themselves: once every criterion is met, the learner advances (or graduates) without a trainer step."""
     if not en.program.self_paced or en.graduated_at:
@@ -93,7 +105,7 @@ def my_enrollments(ctx: Ctx = Depends(current)):
     for en in ctx.db.scalars(select(Enrollment).where(Enrollment.user_id == ctx.user.id)):
         out.append({"id": str(en.id), "program": {"id": str(en.program_id), "slug": en.program.slug, "self_paced": en.program.self_paced, "title_ar": en.program.title_ar, "title_en": en.program.title_en},
                     "level": en.level_position, "levels": len(en.program.levels), "graduated": en.graduated_at is not None,
-                    "trainer": en.trainer.name if en.trainer else None})
+                    "trainer": en.trainer.name if en.trainer else None, "last_activity": last_activity(ctx.db, en)})
     return out
 
 
@@ -161,12 +173,14 @@ def get_lesson(eid: str, lid: str, ctx: Ctx = Depends(current)):
     en = my_enrollment(ctx, eid)
     ls = gated_lesson(en, lid)
     refl = ctx.db.get(Reflection, (ctx.user.id, ls.id))
+    from ..models import LessonComment
+    notes = [{"text": c.text, "at": c.created_at.isoformat()} for c in ctx.db.scalars(select(LessonComment).where(LessonComment.enrollment_id == en.id, LessonComment.lesson_id == ls.id).order_by(LessonComment.created_at))]
     best = best_attempts(ctx.db, ctx.user.id, [ls.id]).get(ls.id)
     return {"id": str(ls.id), "title_ar": ls.title_ar, "title_en": ls.title_en, "hours": ls.hours, "body_ar": ls.body_ar, "body_en": ls.body_en,
             "video_url": ls.video_url, "group_ref": ls.group_ref,
             "questions": [{"q_ar": q.q_ar, "q_en": q.q_en, "options": q.options} for q in ls.questions],  # correct answers never leave the server
             "required_correct": required_correct(ls), "best": {"score": best.score, "total": best.total} if best else None,
-            "done": bool(done_ids(ctx.db, ctx.user.id, [ls.id])), "reflection": refl.text if refl else ""}
+            "done": bool(done_ids(ctx.db, ctx.user.id, [ls.id])), "reflection": refl.text if refl else "", "trainer_notes": notes}
 
 
 @router.post("/enrollments/{eid}/lessons/{lid}/quiz")

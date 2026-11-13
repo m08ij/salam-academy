@@ -20,7 +20,7 @@ const D: Record<string, Pair> = {
   forgotTitle: ["استعادة الدخول", "Recover access"], forgotDone: ["إن كان البريد مسجّلًا فستصلك رسالة برابط صالح لمدة قصيرة.", "If this e-mail has an account, a short-lived link is on its way."],
   resetDone: ["تغيّرت كلمة المرور. سجّل الدخول من جديد.", "Your password was changed. Please sign in again."],
   inviteDone: ["تم إنشاء حسابك بنجاح. سجّل الدخول للبدء.", "Your account is ready. Sign in to get started."], language: ["اللغة", "Language"],
-  nav_learn: ["دورتي", "My course"], nav_values: ["منظومة القيم", "Values system"], nav_plan: ["خطة نموّي", "My growth plan"],
+  nav_learn: ["دورتي", "My course"], nav_values: ["منظومة القيم", "Values system"], nav_gloss: ["قاموس الدورة", "Glossary"], nav_insights: ["أرقام الدورة", "Course numbers"], nav_plan: ["خطة نموّي", "My growth plan"],
   nav_trainer: ["متابعة المتدربين", "Trainee tracking"], nav_users: ["المستخدمون والأدوار", "Users & roles"], nav_enroll: ["الإسناد والتسجيل", "Enrollment & assignment"],
   nav_programs: ["البرامج والمستويات", "Programs & levels"], nav_cohorts: ["الدفعات والإعلانات", "Cohorts & announcements"], nav_audit: ["سجل التدقيق", "Audit log"], nav_settings: ["إعدادات التقييم", "Assessment settings"], nav_account: ["حسابي والأمان", "Account & security"],
   signInSub: ["أهلًا بعودتك. ادخل لمتابعة رحلتك.", "Welcome back. Sign in to continue your journey."], inviteOnly: ["الحسابات بدعوة من فريق الأكاديمية.", "Accounts are created by invitation from the academy team."],

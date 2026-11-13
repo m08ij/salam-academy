@@ -38,7 +38,7 @@ export default function TraineeFile() {
       {error && <Alert>{error}</Alert>}
       {!sp && <LevelTrack levels={f.program.levels} current={st.level} graduated={st.graduated} />}
       <Tabs<Tab> value={tab} onChange={setTab} tabs={sp ? [["over", L(["التقدّم", "Progress"])], ["shared", t("reflection")], ["hist", t("history")]] : [["over", t("criteria")], ["proj", t("project")], ["eval", t("evaluation")], ["shared", t("reflection")], ["hist", t("history")]]} />
-      {tab === "over" && sp && <SelfPaced f={f} st={st} />}
+      {tab === "over" && sp && <SelfPaced f={f} st={st} eid={eid} onDone={load} />}
       {tab === "over" && !sp && <>
         <ScoreCards stats={st} />
         <div className="grid g2">
@@ -87,7 +87,21 @@ export default function TraineeFile() {
 }
 
 /** Self-paced course: what the learner has done, where they stand, and where they may need help. */
-function SelfPaced({ f, st }: { f: any; st: any }) {
+function Note({ eid, lid, notes, onDone }: { eid: string; lid: string; notes: string[]; onDone: () => void }) {
+  const { L } = useI18n();
+  const [v, setV] = useState("");
+  return (
+    <details className="note-box"><summary className="tiny">💬 {notes.length ? `${notes.length}` : L(["تعليق", "Comment"])}</summary>
+      {notes.map((n, k) => <p key={k} className="tiny muted">{n}</p>)}
+      <form onSubmit={async (e) => { e.preventDefault(); if (v.trim().length < 2) return; await post(`/training/enrollments/${eid}/lessons/${lid}/comment`, { text: v }); setV(""); onDone(); }}>
+        <textarea className="inp" rows={2} maxLength={1500} value={v} onChange={(e) => setV(e.target.value)} placeholder={L(["ملاحظة قصيرة يراها المتدرب في هذا القسم", "A short note the learner sees on this section"])} />
+        <button className="btn sm pri" disabled={v.trim().length < 2}>{L(["أرسل", "Send"])}</button>
+      </form>
+    </details>
+  );
+}
+
+function SelfPaced({ f, st, eid, onDone }: { f: any; st: any; eid: string; onDone: () => void }) {
   const { t, L, lang } = useI18n();
   const lessons = f.lessons as any[];
   const sections = lessons.filter((l) => !l.questions || l.questions <= 10);
@@ -112,12 +126,13 @@ function SelfPaced({ f, st }: { f: any; st: any }) {
           : next ? L([`القسم التالي: ${next.title_ar}`, `Next section: ${next.title_en || next.title_ar}`]) : L(["أنهى الأقسام؛ بقي الاختبار النهائي (٧٠٪ للنجاح).", "All sections done; the final exam remains (70% to pass)."])}</p>
         {(exam?.attempts ?? 0) >= 3 && (examPct ?? 0) < 70 && <div className="alert warn small">{L(["حاول الاختبار عدة مرات دون نجاح؛ قد يحتاج مساعدتك في المراجعة.", "Several exam attempts without passing — they may need your help reviewing."])}</div>}
       </div>
-      <div className="tbl-wrap cards"><table><thead><tr><th>{t("lesson")}</th><th>{t("status")}</th><th>{t("completed")}</th><th>{t("quiz")}</th></tr></thead><tbody>
+      <div className="tbl-wrap cards"><table><thead><tr><th>{t("lesson")}</th><th>{t("status")}</th><th>{t("completed")}</th><th>{t("quiz")}</th><th></th></tr></thead><tbody>
         {lessons.map((l: any, i: number) => <tr key={l.id}>
           <td className="lead"><b className="small">{num(i + 1, lang)}. {L([l.title_ar, l.title_en])}</b></td>
           <td data-label={t("status")}>{l.done_at ? <span className="pill ok">✓ {L(["مكتمل", "Done"])}</span> : <span className="pill">{L(["لم يبدأ", "Not yet"])}</span>}</td>
           <td data-label={t("completed")} className="small faint">{date(l.done_at, lang)}</td>
           <td data-label={t("quiz")} className="num">{l.best ? `${num(l.best[0], lang)}/${num(l.best[1], lang)} · ${num(l.attempts, lang)}×` : "—"}</td>
+          <td data-label={L(["تعليق", "Comment"])}><Note eid={eid} lid={l.id} notes={l.notes || []} onDone={onDone} /></td>
         </tr>)}</tbody></table></div>
     </>
   );

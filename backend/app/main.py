@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from .config import get_settings
-from .routers import account, admin, assistant, auth, catalog, content, learning, programs, public, training, users
+from .routers import account, admin, assistant, auth, catalog, content, insights, learning, programs, public, training, users
 
 log = logging.getLogger("salam")
 if not log.handlers:  # make the app's own warnings visible in the host's logs (uvicorn only configures its own loggers)
@@ -55,7 +55,7 @@ def create_app() -> FastAPI:
     docs = s.environment == "development"
     app = FastAPI(title="Salam Academy API", version="1.0.0", docs_url="/api/docs" if docs else None, redoc_url=None, openapi_url="/api/openapi.json" if docs else None)
     app.add_middleware(Guard)
-    for r in (auth, account, users, programs, learning, training, admin, catalog, public, content, assistant):
+    for r in (auth, account, users, programs, learning, training, admin, catalog, public, content, assistant, insights):
         app.include_router(r.router)
 
     @app.get("/api/health")

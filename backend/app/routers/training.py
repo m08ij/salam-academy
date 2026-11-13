@@ -40,6 +40,40 @@ def get_en(ctx: Ctx, eid: str) -> Enrollment:
     return en
 
 
+def alerts(db, en: Enrollment, st: dict) -> list[str]:
+    """inactive: no activity for 7+ days (not graduated); exam: 2+ final-exam attempts below the pass mark."""
+    from datetime import datetime, timedelta
+
+    from .learning import last_activity
+    out = []
+    la = last_activity(db, en)
+    if not st["graduated"] and la and datetime.fromisoformat(la) < datetime.utcnow() - timedelta(days=7):
+        out.append("inactive")
+    exam = [ls for lv in en.program.levels for ls in level_lessons(lv) if len(ls.questions) > 10]
+    if exam and not st["graduated"]:
+        tries = db.scalars(select(QuizAttempt).where(QuizAttempt.user_id == en.user_id, QuizAttempt.lesson_id == exam[0].id)).all()
+        if len(tries) >= 2 and max(a.score / a.total for a in tries) < 0.7:
+            out.append("exam")
+    return out
+
+
+class CommentIn(BaseModel):
+    text: str = Field(min_length=2, max_length=1500)
+
+
+@router.post("/enrollments/{eid}/lessons/{lid}/comment")
+def comment(eid: str, lid: str, body: CommentIn, request: Request, ctx: Ctx = Depends(require("train"))):
+    from ..models import LessonComment
+    en = get_en(ctx, eid)
+    ls = next((x for lv in en.program.levels for x in level_lessons(lv) if str(x.id) == lid), None)
+    if not ls:
+        raise HTTPException(status_code=404, detail={"code": "not_found"})
+    ctx.db.add(LessonComment(enrollment_id=en.id, lesson_id=ls.id, author_id=ctx.user.id, text=body.text.strip()))
+    audit.log(ctx.db, "trainer_comment", ctx.user, request, "enrollment", en.id)
+    ctx.db.commit()
+    return {"ok": True}
+
+
 @router.get("/trainees")
 def trainees(scope: str = Query(default="mine", pattern=r"^(mine|all|none|[0-9a-f-]{36})$"), ctx: Ctx = Depends(require("train"))):
     q = select(Enrollment)
@@ -55,7 +89,7 @@ def trainees(scope: str = Query(default="mine", pattern=r"^(mine|all|none|[0-9a-
             continue
         st = public(level_stats(ctx.db, en))
         out.append({"enrollment_id": str(en.id), "user": {"id": str(en.user_id), "name": en.user.name}, "program": {"self_paced": en.program.self_paced, "title_ar": en.program.title_ar, "title_en": en.program.title_en},
-                    "trainer": en.trainer.name if en.trainer else None, "stats": st, "last_login_at": en.user.last_login_at.isoformat() if en.user.last_login_at else None})
+                    "trainer": en.trainer.name if en.trainer else None, "stats": st, "alerts": alerts(ctx.db, en, st), "last_login_at": en.user.last_login_at.isoformat() if en.user.last_login_at else None})
     return out
 
 
@@ -73,6 +107,10 @@ def trainee_file(eid: str, ctx: Ctx = Depends(require("train"))):
         cur = attempts.get(a.lesson_id)
         if not cur or a.score / a.total > cur[0] / cur[1]:
             attempts[a.lesson_id] = (a.score, a.total)
+    from ..models import LessonComment
+    notes: dict = {}
+    for c in db.scalars(select(LessonComment).where(LessonComment.enrollment_id == en.id).order_by(LessonComment.created_at)):
+        notes.setdefault(c.lesson_id, []).append(c.text)
     refl = []
     if u.share_reflections:  # private unless the trainee chose to share
         all_ids = [ls.id for level in en.program.levels for ls in level_lessons(level)]
@@ -83,7 +121,7 @@ def trainee_file(eid: str, ctx: Ctx = Depends(require("train"))):
     return {"enrollment_id": str(en.id), "user": {"id": str(u.id), "name": u.name, "email": u.email}, "trainer": en.trainer.name if en.trainer else None,
             "program": {"title_ar": en.program.title_ar, "title_en": en.program.title_en, "levels": [{"position": x.position, "title_ar": x.title_ar, "title_en": x.title_en} for x in en.program.levels]},
             "journey": journey(db, en), "rubric": rubric(db),
-            "lessons": [{"id": str(ls.id), "title_ar": ls.title_ar, "title_en": ls.title_en, "done_at": done[ls.id].isoformat() if ls.id in done else None, "best": attempts.get(ls.id),
+            "lessons": [{"id": str(ls.id), "title_ar": ls.title_ar, "title_en": ls.title_en, "done_at": done[ls.id].isoformat() if ls.id in done else None, "best": attempts.get(ls.id), "notes": notes.get(ls.id, []),
                          "attempts": tries.get(ls.id, 0), "questions": len(ls.questions)} for ls in lessons],
             "shared": {"reflections": u.share_reflections, "plan": u.share_plan}, "reflections": refl, "plan": plan,
             "evaluations": [evaluation_out(e) | {"level": e.level_position} for e in evals]}

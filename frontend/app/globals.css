@@ -996,3 +996,16 @@ select.inp.sm { min-width: 140px; border-radius: 10px; background-color: var(--b
 .stats { gap: 10px; }
 .stat2 { padding: 14px; }
 .card { border-radius: 18px; }
+
+/* listen, exercises, glossary, notes, insights */
+.listen{display:inline-flex;gap:6px;align-items:center}.inp.sm{padding:4px 8px;width:auto;min-height:0}
+.reader-top{flex-wrap:wrap;gap:8px}
+.exercise .ex-grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));margin:12px 0}
+.ex-cell{display:flex;flex-direction:column;gap:6px;padding:12px;border-radius:14px;background:var(--soft,rgba(127,127,127,.07));border:1px solid var(--line)}
+.ex-vision .ex-cell:first-child{grid-column:1/-1}
+.note-card{border-inline-start:4px solid var(--acc)}
+.note-box summary{cursor:pointer}.note-box form{display:flex;flex-direction:column;gap:6px;margin-top:6px;min-width:220px}
+.gloss{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));margin-top:12px}.gloss-item h3{margin:0 0 6px}
+.stats-row{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));margin-bottom:14px}.stat .big{display:block;font-size:1.8rem;margin-top:4px}
+.hbar{display:grid;grid-template-columns:minmax(120px,1fr) 2fr 32px;gap:10px;align-items:center;margin:8px 0}
+.who-cell .pill{margin-inline-start:6px}

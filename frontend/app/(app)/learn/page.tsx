@@ -9,7 +9,7 @@ import { useSession } from "@/lib/session";
 import { pushWidget } from "@/lib/native";
 import JoinCourse from "@/components/JoinCourse";
 
-type En = { id: string; program: { slug?: string; title_ar: string; title_en: string }; level: number; levels: number; graduated: boolean; trainer: string | null };
+type En = { id: string; program: { slug?: string; title_ar: string; title_en: string }; level: number; levels: number; graduated: boolean; trainer: string | null; last_activity?: string | null };
 
 /** Circular progress; animates from empty on first paint. */
 function Ring({ pct, label }: { pct: number; label: string }) {
@@ -66,6 +66,8 @@ export default function Learn() {
 
   return (
     <>
+      {(() => { const e = ens?.find((x) => !x.graduated && x.last_activity); const days = e ? Math.floor((Date.now() - new Date(e.last_activity + "Z").getTime()) / 864e5) : 0;
+        return e && days >= 3 ? <div className="alert info">👋 {L([`اشتقنا لك! مرّ ${num(days, lang)} أيام على آخر نشاط لك. خطوة صغيرة اليوم تكفي.`, `We missed you! It's been ${days} days. One small step today is enough.`])} <a href={`/learn/${e.id}`}><b>{L(["تابع من حيث توقفت", "Continue"])}</b></a></div> : null; })()}
       {openP.filter((p) => !p.enrollment_id).map((p) => <JoinCourse key={p.id} program={p} onJoined={() => setReload((n) => n + 1)} />)}
       {ens === null ? <div className="stack"><div className="skel" style={{ height: 210, borderRadius: 22 }} /><div className="skel" style={{ height: 80 }} /></div>
         : ens.length === 0 && openP.some((p) => !p.enrollment_id) ? null : ens.length === 0 ? <>

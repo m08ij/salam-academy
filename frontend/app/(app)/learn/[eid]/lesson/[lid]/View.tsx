@@ -8,6 +8,7 @@ import { num, useI18n } from "@/lib/i18n";
 import { useSession } from "@/lib/session";
 import LessonBody from "@/components/LessonBody";
 import Reader from "@/components/Reader";
+import Exercise from "@/components/Exercise";
 
 export default function LessonPage() {
   const { eid, lid } = useParams<{ eid: string; lid: string }>();
@@ -40,6 +41,7 @@ export default function LessonPage() {
     <>
       <Head icon="book" eyebrow={L([tree.program.title_ar, tree.program.title_en])} title={L([ls.title_ar, ls.title_en])} sub={ls.hours < 1 ? `${num(Math.max(1, Math.round(ls.hours * 60)), lang)} ${L(["دقيقة قراءة", "min read"])}` : `${num(ls.hours, lang)} ${t("hours")}`} right={ls.done ? <span className="pill ok">{t("completed")}</span> : undefined} />
       {error && <Alert>{error}</Alert>}
+      {!!ls.trainer_notes?.length && <div className="card note-card"><h3>💬 {L(["ملاحظة مدربك", "Your trainer's note"])}</h3>{ls.trainer_notes.map((n: any, k: number) => <p key={k} className="small">{n.text}</p>)}</div>}
       <div className="card lesson-card">{tree.program.self_paced && body.split(/\s+/).length > 260 ? <Reader text={body} title={L([ls.title_ar, ls.title_en])} /> : <LessonBody text={body} />}{ls.video_url && <a className="btn" href={ls.video_url} target="_blank" rel="noopener noreferrer">{t("watch")} ↗</a>}</div>
       {ls.questions.length > 0 && (
         <div className="card">
@@ -63,10 +65,11 @@ export default function LessonPage() {
           </div>
         </div>
       )}
+      <Exercise title={ls.title_ar} value={refl} onSave={(v) => { setRefl(v); put(`/learn/enrollments/${eid}/lessons/${lid}/reflection`, { text: v }).catch(() => {}); }} />
       <div className="card">
         <h3>{t("reflection")}</h3>
-        <textarea className="inp" value={refl} maxLength={5000} placeholder={t("reflectionHint")} aria-label={t("reflection")} onChange={(e) => {
-          const v = e.target.value; setRefl(v); clearTimeout(timer.current);
+        <textarea className="inp" value={refl.replace(/\n*⟦تمرين⟧\{.*\}/s, "")} maxLength={5000} placeholder={t("reflectionHint")} aria-label={t("reflection")} onChange={(e) => {
+          const v = e.target.value + (refl.match(/\n*⟦تمرين⟧\{.*\}/s)?.[0] || ""); setRefl(v); clearTimeout(timer.current);
           timer.current = setTimeout(() => put(`/learn/enrollments/${eid}/lessons/${lid}/reflection`, { text: v }).catch(() => {}), 900);
         }} />
         <p className="tiny faint">{me?.share_reflections ? t("reflShared") : t("reflPrivate")}</p>

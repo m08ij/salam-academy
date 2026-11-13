@@ -72,7 +72,7 @@ export default function Trainer() {
             const done = r.stats.checks.filter((c: any) => c.ok).length;
             return (
               <tr key={r.enrollment_id} data-href onClick={(e) => { if (!(e.target as HTMLElement).closest("a,button,select")) router.push(`/trainer/${r.enrollment_id}`); }}>
-                <td className="lead"><span className="who-cell"><Avatar name={r.user.name} /><div><b>{r.user.name}</b><span className="tiny faint">{L([r.program.title_ar, r.program.title_en])}</span></div></span></td>
+                <td className="lead"><span className="who-cell"><Avatar name={r.user.name} /><div><b>{r.user.name}</b>{r.alerts?.includes("inactive") && <span className="pill warn tiny">{L(["غير نشط ٧ أيام", "Inactive 7d"])}</span>}{r.alerts?.includes("exam") && <span className="pill bad tiny">{L(["تعثّر في الاختبار", "Exam trouble"])}</span>}<span className="tiny faint">{L([r.program.title_ar, r.program.title_en])}</span></div></span></td>
                 <td data-label={t("level")}>{r.stats.graduated ? <span className="pill ok">{t("graduated")}</span> : <span className="pill acc">{num(r.stats.level, lang)} / {num(r.stats.levels, lang)}</span>}</td>
                 <td data-label={L(["الدروس", "Lessons"])}><span className="mini-bar"><span className="bar"><i style={{ width: `${pct}%` }} /></span><span className="tiny num">{num(r.stats.lessons_done, lang)}/{num(r.stats.lessons_total, lang)}</span></span></td>
                 <td data-label={t("quizzes")} className="num">{r.stats.quiz == null ? "—" : `${num(r.stats.quiz, lang)}٪`}</td>
