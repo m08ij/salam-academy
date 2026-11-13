@@ -62,7 +62,7 @@ export default function Users() {
 
       {users === null ? <div className="stack"><div className="skel" style={{ height: 60 }} /><div className="skel" style={{ height: 60 }} /></div>
         : shown.length === 0 ? <Empty icon="users">{L(["لا نتائج مطابقة.", "No matching results."])}</Empty> :
-        <div className="tbl-wrap cards"><table>
+        <div className="tbl-wrap cards slim"><table>
           <thead><tr><th>{t("name")}</th><th>{t("role")}</th><th>{t("status")}</th><th>{L(["التحقق بخطوتين", "2-step"])}</th><th>{t("lastActive")}</th><th /></tr></thead>
           <tbody>{shown.map((u) => {
             const locked = u.id === me?.id || u.role === "owner" || (u.role === "admin" && me?.role !== "owner");

@@ -55,3 +55,14 @@ def config():
     """What the sign-in page needs to know. The allow-list itself is never published."""
     s = get_settings()
     return {"trial": bool(s.trial_emails.strip()), "password_min": s.password_min_length}
+
+
+@router.get("/preview")
+def preview(db: DB = Depends(get_db)):
+    """The Identity course's welcome section, readable without an account (a free sample)."""
+    from ..models import Program
+    from ..services.progress import level_lessons
+    p = db.scalar(select(Program).where(Program.slug == "identity"))
+    ls = [x for lv in (p.levels if p else []) for x in level_lessons(lv)]
+    x = ls[1] if len(ls) > 1 else None
+    return {"title": x.title_ar, "body": x.body_ar, "sections": len(ls) - 1} if x else {}

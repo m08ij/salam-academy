@@ -110,7 +110,7 @@ export default function Home() {
               <div className="cta">
                 {me ? <Link className="btn pri lg" href={homeFor(me)}>{L(["تابع رحلتك", "Continue your journey"])}<Icon name="arrow" className="ico flip" /></Link>
                   : <Link className="btn pri lg" href="/login">{L(["ابدأ الدورة", "Start the course"])}<Icon name="arrow" className="ico flip" /></Link>}
-                <a className="btn lg" href="#course">{L(["محتوى الدورة", "Course outline"])}</a>
+                <Link className="btn lg" href="/preview">{L(["اقرأ قسمًا مجانًا", "Read a free section"])}</Link>
               </div>
             </div>
             <Orbit groups={d?.groups} lang={lang} />

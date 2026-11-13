@@ -13,7 +13,7 @@ import { asset } from "@/lib/env";
 type Item = [string, string, string | null, IconName]; // href, label key, required permission, icon
 
 const GROUPS: [string, Item[]][] = [
-  ["learnG", [["/learn", "nav_learn", "learn", "learn"], ["/plan", "nav_plan", "learn", "plan"], ["/values", "nav_values", null, "values"], ["/glossary", "nav_gloss", null, "book"]]],
+  ["learnG", [["/learn", "nav_learn", "learn", "learn"], ["/plan", "nav_plan", "learn", "plan"], ["/values", "nav_values", "preview", "values"], ["/glossary", "nav_gloss", null, "book"]]],
   ["trainG", [["/trainer", "nav_trainer", "train", "trainer"], ["/admin", "nav_users", "users", "users"], ["/admin/enrollments", "nav_enroll", "users", "enroll"], ["/admin/programs", "nav_programs", "programs", "programs"],
     ["/admin/cohorts", "nav_cohorts", "announce", "cohorts"], ["/admin/insights", "nav_insights", "audit", "audit"], ["/admin/audit", "nav_audit", "audit", "audit"], ["/admin/settings", "nav_settings", "settings", "settings"]]],
   ["accG", [["/account", "nav_account", null, "account"]]],

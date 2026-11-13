@@ -82,6 +82,14 @@ export default function Learn() {
           const pct = st && st.lessons_total ? Math.round((100 * st.lessons_done) / st.lessons_total) : 0;
           return (
             <Fragment key={e.id}>
+              {next && !e.graduated && (
+                <Link className="next-card" href={`/learn/${e.id}/lesson/${next.id}`}>
+                  <span className="play"><Icon name="play" /></span>
+                  <span className="stack" style={{ gap: 2 }}><span className="tiny faint">{L(["تابع من حيث توقفت", "Pick up where you left off"])}</span><b>{L([next.title_ar, next.title_en])}</b></span>
+                  <Icon name="arrow" className="ico go" />
+                </Link>
+              )}
+
               <div className="card hero">
                 <div className="home-hero">
                   <Ring pct={e.graduated ? 100 : pct} label={e.graduated ? t("graduated") : L(["من المستوى", "of level"])} />
@@ -102,15 +110,9 @@ export default function Learn() {
                 </div>
               </div>
 
-              {next && !e.graduated && (
-                <Link className="next-card" href={`/learn/${e.id}/lesson/${next.id}`}>
-                  <span className="play"><Icon name="play" /></span>
-                  <span className="stack" style={{ gap: 2 }}><span className="tiny faint">{L(["تابع من حيث توقفت", "Pick up where you left off"])}</span><b>{L([next.title_ar, next.title_en])}</b></span>
-                  <Icon name="arrow" className="ico go" />
-                </Link>
-              )}
 
-              {st && <Stats items={[
+              {st && st.lessons_done === 0 && !e.graduated ? <p className="empty-hint">🌱 {L(["ابدأ أول قسم، وستظهر نتائجك وتقدّمك هنا.", "Start your first section and your progress will show here."])}</p>
+              : st && <Stats items={[
                 { icon: "book", value: `${num(st.lessons_done, lang)}/${num(st.lessons_total, lang)}`, label: L(["دروس المستوى", "Level lessons"]), tone: "acc" },
                 { icon: "quiz", value: st.quiz ?? "—", suffix: st.quiz == null ? undefined : "٪", label: t("quizzes"), tone: "info" },
                 { icon: "star", value: st.eval == null ? "—" : `${num(st.eval, lang)}/${num(5, lang)}`, label: t("evaluation"), tone: "gold" },

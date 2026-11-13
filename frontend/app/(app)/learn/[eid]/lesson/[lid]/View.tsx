@@ -10,6 +10,20 @@ import LessonBody from "@/components/LessonBody";
 import Reader from "@/components/Reader";
 import Exercise from "@/components/Exercise";
 
+/** A short, light confetti burst (CSS only; skipped when the user prefers reduced motion). */
+function celebrate() {
+  if (typeof window === "undefined" || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const box = document.createElement("div");
+  box.className = "confetti";
+  for (let i = 0; i < 28; i++) {
+    const p = document.createElement("i");
+    p.style.setProperty("--x", `${Math.random() * 100}vw`); p.style.setProperty("--d", `${0.9 + Math.random() * 0.8}s`); p.style.setProperty("--h", `${Math.floor(Math.random() * 360)}`);
+    box.appendChild(p);
+  }
+  document.body.appendChild(box);
+  setTimeout(() => box.remove(), 1900);
+}
+
 export default function LessonPage() {
   const { eid, lid } = useParams<{ eid: string; lid: string }>();
   const { t, L, lang, err } = useI18n();
@@ -80,8 +94,8 @@ export default function LessonPage() {
           <button type="button" className="btn pri" disabled={!quizOk || ls.done} onClick={async () => {
             try {
               const r = await post(`/learn/enrollments/${eid}/lessons/${lid}/complete`);
-              if (r?.completed_course) { toast(L(["مبارك! أتممت الدورة 🎓", "Congratulations — you completed the course! 🎓"])); router.push("/learn"); return; }
-              toast(t("completed") + " ✓"); if (next) router.push(`/learn/${eid}/lesson/${next.id}`); else router.push(`/learn/${eid}`); } catch (x) { setError(err(x)); }
+              if (r?.completed_course) { celebrate(); toast(L(["مبارك! أتممت الدورة 🎓", "Congratulations — you completed the course! 🎓"])); router.push("/learn"); return; }
+              celebrate(); toast(L(["أحسنت! خطوة جديدة نحو هويتك ✨", "Well done! One more step ✨"])); await new Promise((ok) => setTimeout(ok, 900)); if (next) router.push(`/learn/${eid}/lesson/${next.id}`); else router.push(`/learn/${eid}`); } catch (x) { setError(err(x)); }
           }}>{ls.done ? t("completed") + " ✓" : t("complete")}</button>
           {next ? <Link className="btn" href={`/learn/${eid}/lesson/${next.id}`}>{t("nextLesson")}</Link> : <Link className="btn" href={`/learn/${eid}`}>{t("toJourney")}</Link>}
         </div>
